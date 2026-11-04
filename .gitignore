@@ -1,0 +1,12 @@
+.gradle/
+**/build/
+local.properties
+.tools/
+.superpowers/
+release/*.apk
+release/*.zip
+__pycache__/
+*.py[cod]
+*.log
+.idea/
+*.iml

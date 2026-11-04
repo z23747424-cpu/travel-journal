@@ -1,0 +1,367 @@
+[
+  {
+    "id": "r01",
+    "query": "想在山东看看海和老建筑",
+    "preferredTags": [
+      "海边",
+      "历史建筑"
+    ],
+    "region": "山东",
+    "mustNotTags": [],
+    "relevantIds": [
+      "cn-qingdao",
+      "cn-yantai"
+    ],
+    "excludeRegions": [],
+    "excludedIds": [],
+    "requiresConfirmation": [],
+    "annotationNote": "按所给有限资料预先标注主题适合度，未标注不等于客观上绝不适合。"
+  },
+  {
+    "id": "r02",
+    "query": "浙江水乡古镇，逛河边老房子",
+    "preferredTags": [
+      "水乡",
+      "古镇",
+      "历史建筑"
+    ],
+    "region": "浙江",
+    "mustNotTags": [],
+    "relevantIds": [
+      "cn-wuzhen",
+      "cn-nanxun",
+      "cn-shaoxing"
+    ],
+    "excludeRegions": [],
+    "excludedIds": [],
+    "requiresConfirmation": [],
+    "annotationNote": "按所给有限资料预先标注主题适合度，未标注不等于客观上绝不适合。"
+  },
+  {
+    "id": "r03",
+    "query": "云南想看湖，慢一点",
+    "preferredTags": [
+      "湖泊",
+      "休闲"
+    ],
+    "region": "云南",
+    "mustNotTags": [],
+    "relevantIds": [
+      "cn-dali",
+      "cn-kunming"
+    ],
+    "excludeRegions": [],
+    "excludedIds": [],
+    "requiresConfirmation": [],
+    "annotationNote": "按所给有限资料预先标注主题适合度，未标注不等于客观上绝不适合。"
+  },
+  {
+    "id": "r04",
+    "query": "四川看山林和历史文化",
+    "preferredTags": [
+      "山林",
+      "历史文化"
+    ],
+    "region": "四川",
+    "mustNotTags": [],
+    "relevantIds": [
+      "cn-emeishan",
+      "cn-dujiangyan"
+    ],
+    "excludeRegions": [],
+    "excludedIds": [],
+    "requiresConfirmation": [],
+    "annotationNote": "按所给有限资料预先标注主题适合度，未标注不等于客观上绝不适合。"
+  },
+  {
+    "id": "r05",
+    "query": "福建想逛古街吃美食",
+    "preferredTags": [
+      "历史街区",
+      "美食",
+      "历史文化"
+    ],
+    "region": "福建",
+    "mustNotTags": [],
+    "relevantIds": [
+      "cn-quanzhou",
+      "cn-fuzhou",
+      "cn-xiamen"
+    ],
+    "excludeRegions": [],
+    "excludedIds": [],
+    "requiresConfirmation": [],
+    "annotationNote": "按所给有限资料预先标注主题适合度，未标注不等于客观上绝不适合。"
+  },
+  {
+    "id": "r06",
+    "query": "看森林和瀑布",
+    "preferredTags": [
+      "森林",
+      "瀑布"
+    ],
+    "region": "",
+    "mustNotTags": [],
+    "relevantIds": [
+      "cn-jiuzhaigou"
+    ],
+    "excludeRegions": [],
+    "excludedIds": [],
+    "requiresConfirmation": [],
+    "annotationNote": "按所给有限资料预先标注主题适合度，未标注不等于客观上绝不适合。"
+  },
+  {
+    "id": "r07",
+    "query": "想看石英砂岩峰林",
+    "preferredTags": [
+      "地质",
+      "溪谷",
+      "森林"
+    ],
+    "region": "湖南",
+    "mustNotTags": [],
+    "relevantIds": [
+      "cn-zhangjiajie"
+    ],
+    "excludeRegions": [],
+    "excludedIds": [],
+    "requiresConfirmation": [],
+    "annotationNote": "按所给有限资料预先标注主题适合度，未标注不等于客观上绝不适合。"
+  },
+  {
+    "id": "r08",
+    "query": "想理解古代水利工程",
+    "preferredTags": [
+      "水利遗产"
+    ],
+    "region": "",
+    "mustNotTags": [],
+    "relevantIds": [
+      "cn-dujiangyan"
+    ],
+    "excludeRegions": [],
+    "excludedIds": [],
+    "requiresConfirmation": [],
+    "annotationNote": "按所给有限资料预先标注主题适合度，未标注不等于客观上绝不适合。"
+  },
+  {
+    "id": "r09",
+    "query": "想看熊猫顺便喝茶",
+    "preferredTags": [
+      "熊猫",
+      "茶文化"
+    ],
+    "region": "",
+    "mustNotTags": [],
+    "relevantIds": [
+      "cn-chengdu"
+    ],
+    "excludeRegions": [],
+    "excludedIds": [],
+    "requiresConfirmation": [],
+    "annotationNote": "按所给有限资料预先标注主题适合度，未标注不等于客观上绝不适合。"
+  },
+  {
+    "id": "r10",
+    "query": "看江南园林，不去浙江",
+    "preferredTags": [
+      "园林",
+      "水乡"
+    ],
+    "region": "江苏",
+    "mustNotTags": [],
+    "relevantIds": [
+      "cn-suzhou",
+      "cn-nanjing"
+    ],
+    "excludeRegions": [
+      "浙江"
+    ],
+    "excludedIds": [],
+    "requiresConfirmation": [],
+    "annotationNote": "按所给有限资料预先标注主题适合度，未标注不等于客观上绝不适合。"
+  },
+  {
+    "id": "r11",
+    "query": "想了解秦唐历史与博物馆",
+    "preferredTags": [
+      "历史文化",
+      "博物馆"
+    ],
+    "region": "陕西",
+    "mustNotTags": [],
+    "relevantIds": [
+      "cn-xian"
+    ],
+    "excludeRegions": [],
+    "excludedIds": [],
+    "requiresConfirmation": [],
+    "annotationNote": "按所给有限资料预先标注主题适合度，未标注不等于客观上绝不适合。"
+  },
+  {
+    "id": "r12",
+    "query": "想看热带雨林和民族文化",
+    "preferredTags": [
+      "雨林",
+      "民族文化"
+    ],
+    "region": "",
+    "mustNotTags": [],
+    "relevantIds": [
+      "cn-xishuangbanna"
+    ],
+    "excludeRegions": [],
+    "excludedIds": [],
+    "requiresConfirmation": [],
+    "annotationNote": "按所给有限资料预先标注主题适合度，未标注不等于客观上绝不适合。"
+  },
+  {
+    "id": "r13",
+    "query": "山东海边候选，之前的青岛不想再看",
+    "preferredTags": [
+      "海边"
+    ],
+    "region": "山东",
+    "mustNotTags": [],
+    "relevantIds": [
+      "cn-weihai",
+      "cn-yantai",
+      "cn-rizhao"
+    ],
+    "excludeRegions": [],
+    "excludedIds": [
+      "cn-qingdao"
+    ],
+    "requiresConfirmation": [],
+    "annotationNote": "按所给有限资料预先标注主题适合度，未标注不等于客观上绝不适合。"
+  },
+  {
+    "id": "r14",
+    "query": "浙江古镇，但这次不要乌镇",
+    "preferredTags": [
+      "古镇",
+      "水乡"
+    ],
+    "region": "浙江",
+    "mustNotTags": [],
+    "relevantIds": [
+      "cn-nanxun",
+      "cn-shaoxing"
+    ],
+    "excludeRegions": [],
+    "excludedIds": [
+      "cn-wuzhen"
+    ],
+    "requiresConfirmation": [],
+    "annotationNote": "按所给有限资料预先标注主题适合度，未标注不等于客观上绝不适合。"
+  },
+  {
+    "id": "r15",
+    "query": "只想去海南看海",
+    "preferredTags": [
+      "海边"
+    ],
+    "region": "海南",
+    "mustNotTags": [],
+    "relevantIds": [],
+    "excludeRegions": [],
+    "excludedIds": [],
+    "requiresConfirmation": [],
+    "annotationNote": "资料库外区域应返回空。"
+  },
+  {
+    "id": "r16",
+    "query": "想去日本古都",
+    "preferredTags": [
+      "古都"
+    ],
+    "region": "日本",
+    "mustNotTags": [],
+    "relevantIds": [],
+    "excludeRegions": [],
+    "excludedIds": [],
+    "requiresConfirmation": [],
+    "annotationNote": "资料库外区域应返回空。"
+  },
+  {
+    "id": "r17",
+    "query": "四川自然游，排除熊猫和历史文化",
+    "preferredTags": [
+      "森林",
+      "湖泊",
+      "瀑布"
+    ],
+    "region": "四川",
+    "mustNotTags": [
+      "熊猫",
+      "历史文化"
+    ],
+    "relevantIds": [
+      "cn-jiuzhaigou"
+    ],
+    "excludeRegions": [],
+    "excludedIds": [],
+    "requiresConfirmation": [],
+    "annotationNote": "按所给有限资料预先标注主题适合度，未标注不等于客观上绝不适合。"
+  },
+  {
+    "id": "r18",
+    "query": "从上海周末两天预算500元，想去海边",
+    "preferredTags": [
+      "海边"
+    ],
+    "region": "",
+    "mustNotTags": [],
+    "relevantIds": [
+      "cn-qingdao",
+      "cn-weihai",
+      "cn-yantai",
+      "cn-rizhao",
+      "cn-xiamen"
+    ],
+    "excludeRegions": [],
+    "excludedIds": [],
+    "requiresConfirmation": [
+      "预算",
+      "往返交通",
+      "总行程可行性"
+    ],
+    "annotationNote": "只标海边偏好适合的灵感，500元/两天可行性无资料，禁止计为满足。"
+  },
+  {
+    "id": "r19",
+    "query": "想看喀斯特山水和古镇",
+    "preferredTags": [
+      "山水",
+      "地质",
+      "古镇"
+    ],
+    "region": "广西",
+    "mustNotTags": [],
+    "relevantIds": [
+      "cn-guilin"
+    ],
+    "excludeRegions": [],
+    "excludedIds": [],
+    "requiresConfirmation": [],
+    "annotationNote": "按所给有限资料预先标注主题适合度，未标注不等于客观上绝不适合。"
+  },
+  {
+    "id": "r20",
+    "query": "想逛古都历史街区，优先北京和洛阳",
+    "preferredTags": [
+      "古都",
+      "历史街区"
+    ],
+    "region": "",
+    "mustNotTags": [],
+    "relevantIds": [
+      "cn-beijing",
+      "cn-luoyang"
+    ],
+    "excludeRegions": [],
+    "excludedIds": [],
+    "requiresConfirmation": [],
+    "annotationNote": "按所给有限资料预先标注主题适合度，未标注不等于客观上绝不适合。"
+  }
+]

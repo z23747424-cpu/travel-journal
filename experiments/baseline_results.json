@@ -1,0 +1,826 @@
+{
+  "datasetVersion": "teaching-v1",
+  "recordedAt": "2026-11-04T09:56:03.123349+00:00",
+  "inputSha256": {
+    "journals.json": "f98668b510c996f30b786af1d3d0d76fe23786a84e70e70c748d7d2e9287f9c3",
+    "retrieval_queries.json": "2be1fdd6029ffcfd16e16467d59fde205a805d05b33eb72f2cfe2be84b724c1a",
+    "recommendation_cases.json": "7d8506105c08e152c671c11cbc6cbd56df94ec314ef1c5578bdd026a016831be",
+    "destinations.json": "c4111b41137fe9aff7492f601f20c229454b82b95e2333b7923d72b9b711bd3b"
+  },
+  "counts": {
+    "journals": 36,
+    "queries": 36,
+    "noMatchQueries": 6,
+    "recommendationCases": 20,
+    "destinations": 30
+  },
+  "baseline": {
+    "method": "local-keyword-and-structured-tags",
+    "retrieval": [
+      {
+        "queryId": "q01",
+        "ids": [
+          "j31",
+          "j01"
+        ],
+        "latencyMs": 2.341478000062125,
+        "error": null
+      },
+      {
+        "queryId": "q02",
+        "ids": [
+          "j06",
+          "j02",
+          "j33",
+          "j01",
+          "j19",
+          "j25",
+          "j05"
+        ],
+        "latencyMs": 0.572680000004766,
+        "error": null
+      },
+      {
+        "queryId": "q03",
+        "ids": [
+          "j07"
+        ],
+        "latencyMs": 0.5377339999768083,
+        "error": null
+      },
+      {
+        "queryId": "q04",
+        "ids": [
+          "j17"
+        ],
+        "latencyMs": 0.6194289999257307,
+        "error": null
+      },
+      {
+        "queryId": "q05",
+        "ids": [
+          "j14",
+          "j32"
+        ],
+        "latencyMs": 0.4382949999808261,
+        "error": null
+      },
+      {
+        "queryId": "q06",
+        "ids": [
+          "j28"
+        ],
+        "latencyMs": 0.40039200007413456,
+        "error": null
+      },
+      {
+        "queryId": "q07",
+        "ids": [
+          "j27"
+        ],
+        "latencyMs": 0.4043200000296565,
+        "error": null
+      },
+      {
+        "queryId": "q08",
+        "ids": [
+          "j20"
+        ],
+        "latencyMs": 0.48472299999957613,
+        "error": null
+      },
+      {
+        "queryId": "q09",
+        "ids": [
+          "j13",
+          "j14"
+        ],
+        "latencyMs": 0.577149000037025,
+        "error": null
+      },
+      {
+        "queryId": "q10",
+        "ids": [
+          "j34",
+          "j22"
+        ],
+        "latencyMs": 0.4037890000745392,
+        "error": null
+      },
+      {
+        "queryId": "q11",
+        "ids": [],
+        "latencyMs": 0.4277539999293367,
+        "error": null
+      },
+      {
+        "queryId": "q12",
+        "ids": [
+          "j15",
+          "j14",
+          "j10"
+        ],
+        "latencyMs": 0.4353790000095614,
+        "error": null
+      },
+      {
+        "queryId": "q13",
+        "ids": [
+          "j35",
+          "j28"
+        ],
+        "latencyMs": 0.5021760000545328,
+        "error": null
+      },
+      {
+        "queryId": "q14",
+        "ids": [
+          "j32"
+        ],
+        "latencyMs": 0.4231859999208609,
+        "error": null
+      },
+      {
+        "queryId": "q15",
+        "ids": [
+          "j12",
+          "j13",
+          "j29"
+        ],
+        "latencyMs": 0.43499800005974976,
+        "error": null
+      },
+      {
+        "queryId": "q16",
+        "ids": [
+          "j20"
+        ],
+        "latencyMs": 0.4308410000248841,
+        "error": null
+      },
+      {
+        "queryId": "q17",
+        "ids": [
+          "j29",
+          "j12",
+          "j15"
+        ],
+        "latencyMs": 0.4268930000534965,
+        "error": null
+      },
+      {
+        "queryId": "q18",
+        "ids": [
+          "j18"
+        ],
+        "latencyMs": 0.5651660000012271,
+        "error": null
+      },
+      {
+        "queryId": "q19",
+        "ids": [
+          "j35",
+          "j11",
+          "j24",
+          "j01",
+          "j33",
+          "j22",
+          "j36",
+          "j05",
+          "j06"
+        ],
+        "latencyMs": 0.4563690000622955,
+        "error": null
+      },
+      {
+        "queryId": "q20",
+        "ids": [
+          "j24",
+          "j35",
+          "j11",
+          "j01",
+          "j33",
+          "j22",
+          "j17",
+          "j29",
+          "j36",
+          "j30",
+          "j05"
+        ],
+        "latencyMs": 0.520982000011827,
+        "error": null
+      },
+      {
+        "queryId": "q21",
+        "ids": [
+          "j36",
+          "j04",
+          "j01",
+          "j03",
+          "j10",
+          "j19",
+          "j02",
+          "j21",
+          "j32"
+        ],
+        "latencyMs": 0.4460289999315137,
+        "error": null
+      },
+      {
+        "queryId": "q22",
+        "ids": [
+          "j34",
+          "j08",
+          "j07",
+          "j22",
+          "j24"
+        ],
+        "latencyMs": 0.43918599999415164,
+        "error": null
+      },
+      {
+        "queryId": "q23",
+        "ids": [
+          "j19",
+          "j05",
+          "j06"
+        ],
+        "latencyMs": 0.4230949999737277,
+        "error": null
+      },
+      {
+        "queryId": "q24",
+        "ids": [
+          "j03",
+          "j19",
+          "j27",
+          "j09",
+          "j17",
+          "j15"
+        ],
+        "latencyMs": 0.44713199997659103,
+        "error": null
+      },
+      {
+        "queryId": "q25",
+        "ids": [
+          "j11",
+          "j23",
+          "j25",
+          "j20",
+          "j07",
+          "j05",
+          "j04",
+          "j16"
+        ],
+        "latencyMs": 0.4670590000159791,
+        "error": null
+      },
+      {
+        "queryId": "q26",
+        "ids": [
+          "j26",
+          "j18",
+          "j36"
+        ],
+        "latencyMs": 0.5358509999950911,
+        "error": null
+      },
+      {
+        "queryId": "q27",
+        "ids": [
+          "j16"
+        ],
+        "latencyMs": 0.48828000001321925,
+        "error": null
+      },
+      {
+        "queryId": "q28",
+        "ids": [
+          "j31",
+          "j01",
+          "j10",
+          "j33",
+          "j06"
+        ],
+        "latencyMs": 0.45025700001133373,
+        "error": null
+      },
+      {
+        "queryId": "q29",
+        "ids": [
+          "j21",
+          "j31",
+          "j33"
+        ],
+        "latencyMs": 0.4757049999852825,
+        "error": null
+      },
+      {
+        "queryId": "q30",
+        "ids": [
+          "j23",
+          "j35",
+          "j20"
+        ],
+        "latencyMs": 0.48532400001022324,
+        "error": null
+      },
+      {
+        "queryId": "q31",
+        "ids": [
+          "j01"
+        ],
+        "latencyMs": 0.4025160000082906,
+        "error": null
+      },
+      {
+        "queryId": "q32",
+        "ids": [],
+        "latencyMs": 0.4003830000556263,
+        "error": null
+      },
+      {
+        "queryId": "q33",
+        "ids": [],
+        "latencyMs": 0.5087680000315231,
+        "error": null
+      },
+      {
+        "queryId": "q34",
+        "ids": [
+          "j11"
+        ],
+        "latencyMs": 0.7221609999987777,
+        "error": null
+      },
+      {
+        "queryId": "q35",
+        "ids": [],
+        "latencyMs": 0.7815080000455055,
+        "error": null
+      },
+      {
+        "queryId": "q36",
+        "ids": [],
+        "latencyMs": 0.6848440000339906,
+        "error": null
+      }
+    ],
+    "recommendation": [
+      {
+        "caseId": "r01",
+        "ids": [
+          "cn-qingdao",
+          "cn-rizhao",
+          "cn-weihai"
+        ],
+        "items": [
+          {
+            "id": "cn-qingdao",
+            "reason": "资料标签匹配：历史建筑、海边",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-rizhao",
+            "reason": "资料标签匹配：海边",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-weihai",
+            "reason": "资料标签匹配：海边",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.06710800005294004,
+        "error": null
+      },
+      {
+        "caseId": "r02",
+        "ids": [
+          "cn-nanxun",
+          "cn-wuzhen",
+          "cn-shaoxing"
+        ],
+        "items": [
+          {
+            "id": "cn-nanxun",
+            "reason": "资料标签匹配：历史建筑、古镇、水乡",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-wuzhen",
+            "reason": "资料标签匹配：历史建筑、古镇、水乡",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-shaoxing",
+            "reason": "资料标签匹配：水乡",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.025137999955404666,
+        "error": null
+      },
+      {
+        "caseId": "r03",
+        "ids": [
+          "cn-dali",
+          "cn-kunming",
+          "cn-lijiang"
+        ],
+        "items": [
+          {
+            "id": "cn-dali",
+            "reason": "资料标签匹配：休闲、湖泊",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-kunming",
+            "reason": "资料标签匹配：湖泊",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-lijiang",
+            "reason": "资料标签匹配：休闲",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.03620899997258675,
+        "error": null
+      },
+      {
+        "caseId": "r04",
+        "ids": [
+          "cn-dujiangyan",
+          "cn-emeishan",
+          "cn-jiuzhaigou"
+        ],
+        "items": [
+          {
+            "id": "cn-dujiangyan",
+            "reason": "资料标签匹配：历史文化、山林",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-emeishan",
+            "reason": "资料标签匹配：历史文化、山林",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-jiuzhaigou",
+            "reason": "资料标签匹配：山林",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.020679000044765417,
+        "error": null
+      },
+      {
+        "caseId": "r05",
+        "ids": [
+          "cn-fuzhou",
+          "cn-quanzhou",
+          "cn-xiamen"
+        ],
+        "items": [
+          {
+            "id": "cn-fuzhou",
+            "reason": "资料标签匹配：历史街区、美食",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-quanzhou",
+            "reason": "资料标签匹配：历史文化、美食",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-xiamen",
+            "reason": "资料标签匹配：美食",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.061576999996759696,
+        "error": null
+      },
+      {
+        "caseId": "r06",
+        "ids": [
+          "cn-jiuzhaigou",
+          "cn-rizhao",
+          "cn-xishuangbanna"
+        ],
+        "items": [
+          {
+            "id": "cn-jiuzhaigou",
+            "reason": "资料标签匹配：森林、瀑布",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-rizhao",
+            "reason": "资料标签匹配：森林",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-xishuangbanna",
+            "reason": "资料标签匹配：森林",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.044284000068728346,
+        "error": null
+      },
+      {
+        "caseId": "r07",
+        "ids": [
+          "cn-zhangjiajie"
+        ],
+        "items": [
+          {
+            "id": "cn-zhangjiajie",
+            "reason": "资料标签匹配：地质、森林、溪谷",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.013896000041313528,
+        "error": null
+      },
+      {
+        "caseId": "r08",
+        "ids": [
+          "cn-dujiangyan"
+        ],
+        "items": [
+          {
+            "id": "cn-dujiangyan",
+            "reason": "资料标签匹配：水利遗产",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.04620799995791458,
+        "error": null
+      },
+      {
+        "caseId": "r09",
+        "ids": [
+          "cn-chengdu",
+          "cn-fuzhou"
+        ],
+        "items": [
+          {
+            "id": "cn-chengdu",
+            "reason": "资料标签匹配：熊猫、茶文化",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-fuzhou",
+            "reason": "资料标签匹配：茶文化",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.03826199997547519,
+        "error": null
+      },
+      {
+        "caseId": "r10",
+        "ids": [
+          "cn-suzhou",
+          "cn-nanjing"
+        ],
+        "items": [
+          {
+            "id": "cn-suzhou",
+            "reason": "资料标签匹配：园林、水乡",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-nanjing",
+            "reason": "资料标签匹配：园林",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.026199999979326094,
+        "error": null
+      },
+      {
+        "caseId": "r11",
+        "ids": [
+          "cn-xian"
+        ],
+        "items": [
+          {
+            "id": "cn-xian",
+            "reason": "资料标签匹配：博物馆、历史文化",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.018445000023348257,
+        "error": null
+      },
+      {
+        "caseId": "r12",
+        "ids": [
+          "cn-xishuangbanna",
+          "cn-dali",
+          "cn-lijiang"
+        ],
+        "items": [
+          {
+            "id": "cn-xishuangbanna",
+            "reason": "资料标签匹配：民族文化、雨林",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-dali",
+            "reason": "资料标签匹配：民族文化",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-lijiang",
+            "reason": "资料标签匹配：民族文化",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.10031100009655347,
+        "error": null
+      },
+      {
+        "caseId": "r13",
+        "ids": [
+          "cn-rizhao",
+          "cn-weihai",
+          "cn-yantai"
+        ],
+        "items": [
+          {
+            "id": "cn-rizhao",
+            "reason": "资料标签匹配：海边",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-weihai",
+            "reason": "资料标签匹配：海边",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-yantai",
+            "reason": "资料标签匹配：海边",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.03219199993509392,
+        "error": null
+      },
+      {
+        "caseId": "r14",
+        "ids": [
+          "cn-nanxun",
+          "cn-shaoxing"
+        ],
+        "items": [
+          {
+            "id": "cn-nanxun",
+            "reason": "资料标签匹配：古镇、水乡",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-shaoxing",
+            "reason": "资料标签匹配：水乡",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.021671000013157027,
+        "error": null
+      },
+      {
+        "caseId": "r15",
+        "ids": [],
+        "items": [],
+        "latencyMs": 0.006362000021908898,
+        "error": null
+      },
+      {
+        "caseId": "r16",
+        "ids": [],
+        "items": [],
+        "latencyMs": 0.009838999972089368,
+        "error": null
+      },
+      {
+        "caseId": "r17",
+        "ids": [
+          "cn-jiuzhaigou"
+        ],
+        "items": [
+          {
+            "id": "cn-jiuzhaigou",
+            "reason": "资料标签匹配：森林、湖泊、瀑布",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.03163999997468636,
+        "error": null
+      },
+      {
+        "caseId": "r18",
+        "ids": [
+          "cn-qingdao",
+          "cn-rizhao",
+          "cn-weihai"
+        ],
+        "items": [
+          {
+            "id": "cn-qingdao",
+            "reason": "资料标签匹配：海边",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-rizhao",
+            "reason": "资料标签匹配：海边",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-weihai",
+            "reason": "资料标签匹配：海边",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.06489399993370171,
+        "error": null
+      },
+      {
+        "caseId": "r19",
+        "ids": [
+          "cn-guilin"
+        ],
+        "items": [
+          {
+            "id": "cn-guilin",
+            "reason": "资料标签匹配：古镇、地质、山水",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.02459699999235454,
+        "error": null
+      },
+      {
+        "caseId": "r20",
+        "ids": [
+          "cn-beijing",
+          "cn-fuzhou",
+          "cn-luoyang"
+        ],
+        "items": [
+          {
+            "id": "cn-beijing",
+            "reason": "资料标签匹配：历史街区、古都",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-fuzhou",
+            "reason": "资料标签匹配：历史街区",
+            "explanationSupported": true
+          },
+          {
+            "id": "cn-luoyang",
+            "reason": "资料标签匹配：古都",
+            "explanationSupported": true
+          }
+        ],
+        "latencyMs": 0.07214800007204758,
+        "error": null
+      }
+    ],
+    "retrievalMetrics": {
+      "positiveQueryCount": 30,
+      "hitAt1": 0.7666666666666667,
+      "hitAt3": 0.9,
+      "noMatchQueryCount": 6,
+      "noMatchFalsePositiveCount": 2,
+      "noMatchFalsePositiveRate": 0.3333333333333333,
+      "missingResultCount": 0,
+      "failureCount": 0,
+      "failureRate": 0.0,
+      "meanLatencyMs": 0.5433841944548274
+    },
+    "recommendationMetrics": {
+      "positiveCaseCount": 18,
+      "top3HitRate": 1.0,
+      "top3PrecisionFixedSlots": 0.574074074074074,
+      "returnedItemSuitability": 0.7560975609756098,
+      "noCandidateCaseCount": 2,
+      "noCandidateFalsePositiveCount": 0,
+      "knownConstraintViolationCount": 0,
+      "knownConstraintViolationRate": 0.0,
+      "returnedItemCount": 41,
+      "explanationSupportJudgedCount": 41,
+      "explanationSupportRate": 1.0,
+      "failureCount": 0,
+      "failureRate": 0.0,
+      "meanLatencyMs": 0.03808300000400777,
+      "missingResultCount": 0
+    }
+  },
+  "model": null,
+  "modelStatus": "待用户配置 API 后真实执行"
+}

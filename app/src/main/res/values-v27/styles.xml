@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.TravelJournal" parent="Theme.TravelJournal.Base">
+        <item name="android:navigationBarColor">#F6F3EB</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

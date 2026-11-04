@@ -1,0 +1,321 @@
+[
+  {
+    "id": "q01",
+    "query": "青岛日落",
+    "relevantIds": [
+      "j01"
+    ],
+    "kind": "关键词",
+    "note": "地点与落日同时明确"
+  },
+  {
+    "id": "q02",
+    "query": "西湖下雨散步",
+    "relevantIds": [
+      "j06"
+    ],
+    "kind": "关键词",
+    "note": "西湖雨天散步"
+  },
+  {
+    "id": "q03",
+    "query": "绍兴乌篷船",
+    "relevantIds": [
+      "j07"
+    ],
+    "kind": "关键词",
+    "note": "船与绍兴"
+  },
+  {
+    "id": "q04",
+    "query": "九寨沟的瀑布",
+    "relevantIds": [
+      "j17"
+    ],
+    "kind": "关键词",
+    "note": "九寨沟水景"
+  },
+  {
+    "id": "q05",
+    "query": "成都火锅",
+    "relevantIds": [
+      "j14"
+    ],
+    "kind": "关键词",
+    "note": "吃火锅的记录"
+  },
+  {
+    "id": "q06",
+    "query": "黄山云海",
+    "relevantIds": [
+      "j28"
+    ],
+    "kind": "关键词",
+    "note": "观云摄影"
+  },
+  {
+    "id": "q07",
+    "query": "北京胡同",
+    "relevantIds": [
+      "j27"
+    ],
+    "kind": "关键词",
+    "note": "胡同与声音"
+  },
+  {
+    "id": "q08",
+    "query": "泉州木偶戏",
+    "relevantIds": [
+      "j20"
+    ],
+    "kind": "关键词",
+    "note": "非遗戏剧"
+  },
+  {
+    "id": "q09",
+    "query": "昆明湖边等朋友",
+    "relevantIds": [
+      "j13"
+    ],
+    "kind": "关键词",
+    "note": "滇池等朋友"
+  },
+  {
+    "id": "q10",
+    "query": "苏州吃面",
+    "relevantIds": [
+      "j34"
+    ],
+    "kind": "关键词",
+    "note": "面食主题"
+  },
+  {
+    "id": "q11",
+    "query": "看太阳掉进大海的那次",
+    "relevantIds": [
+      "j01"
+    ],
+    "kind": "同义",
+    "note": "日落以太阳落海指代"
+  },
+  {
+    "id": "q12",
+    "query": "骑车绕着水边看农田",
+    "relevantIds": [
+      "j10"
+    ],
+    "kind": "同义",
+    "note": "单车沿湖骑行"
+  },
+  {
+    "id": "q13",
+    "query": "那个蓝白花纹自己染出来的布",
+    "relevantIds": [
+      "j35"
+    ],
+    "kind": "同义",
+    "note": "扎染体验"
+  },
+  {
+    "id": "q14",
+    "query": "看黑白团子啃竹子",
+    "relevantIds": [
+      "j32"
+    ],
+    "kind": "同义",
+    "note": "熊猫口语描述"
+  },
+  {
+    "id": "q15",
+    "query": "树冠很高叶子很大的地方",
+    "relevantIds": [
+      "j12"
+    ],
+    "kind": "同义",
+    "note": "雨林观察"
+  },
+  {
+    "id": "q16",
+    "query": "用细线操纵的小人表演",
+    "relevantIds": [
+      "j20"
+    ],
+    "kind": "同义",
+    "note": "提线木偶"
+  },
+  {
+    "id": "q17",
+    "query": "听水声抬头看石头柱子",
+    "relevantIds": [
+      "j29"
+    ],
+    "kind": "同义",
+    "note": "溪水和砂岩峰林"
+  },
+  {
+    "id": "q18",
+    "query": "古代分水工程怎么运作",
+    "relevantIds": [
+      "j18"
+    ],
+    "kind": "同义",
+    "note": "鱼嘴分水工程"
+  },
+  {
+    "id": "q19",
+    "query": "撑伞听雨落到湖里的回忆",
+    "relevantIds": [
+      "j06"
+    ],
+    "kind": "同义",
+    "note": "西湖雨点"
+  },
+  {
+    "id": "q20",
+    "query": "坐船看山映在江里的画面",
+    "relevantIds": [
+      "j30"
+    ],
+    "kind": "同义",
+    "note": "漓江倒影"
+  },
+  {
+    "id": "q21",
+    "query": "和家人在海边玩",
+    "relevantIds": [
+      "j04",
+      "j36"
+    ],
+    "kind": "模糊组合",
+    "note": "妈妈林海野餐及爸爸观察螃蟹"
+  },
+  {
+    "id": "q22",
+    "query": "水乡的夜晚",
+    "relevantIds": [
+      "j08",
+      "j24"
+    ],
+    "kind": "模糊组合",
+    "note": "夜间水岸与倒影"
+  },
+  {
+    "id": "q23",
+    "query": "雨天改逛展馆",
+    "relevantIds": [
+      "j05"
+    ],
+    "kind": "组合",
+    "note": "下雨后改室内"
+  },
+  {
+    "id": "q24",
+    "query": "想找看老建筑的照片",
+    "relevantIds": [
+      "j03",
+      "j09",
+      "j19",
+      "j27"
+    ],
+    "kind": "模糊",
+    "note": "明确描绘老建筑"
+  },
+  {
+    "id": "q25",
+    "query": "古城里慢下来喝点东西",
+    "relevantIds": [
+      "j11",
+      "j21"
+    ],
+    "kind": "模糊组合",
+    "note": "古城咖啡和老街茶"
+  },
+  {
+    "id": "q26",
+    "query": "和室友穿传统衣服拍照",
+    "relevantIds": [
+      "j26"
+    ],
+    "kind": "组合",
+    "note": "同学汉服"
+  },
+  {
+    "id": "q27",
+    "query": "山里早起走路",
+    "relevantIds": [
+      "j16",
+      "j28"
+    ],
+    "kind": "模糊组合",
+    "note": "峨眉清晨和黄山早起"
+  },
+  {
+    "id": "q28",
+    "query": "没有去海滩的青岛展览",
+    "relevantIds": [
+      "j31"
+    ],
+    "kind": "排除组合",
+    "note": "明确限定工业展馆"
+  },
+  {
+    "id": "q29",
+    "query": "带回茶叶给家里",
+    "relevantIds": [
+      "j21"
+    ],
+    "kind": "组合",
+    "note": "为家人买茶"
+  },
+  {
+    "id": "q30",
+    "query": "旧书摊和非遗小店",
+    "relevantIds": [
+      "j23"
+    ],
+    "kind": "组合",
+    "note": "皮市街主题"
+  },
+  {
+    "id": "q31",
+    "query": "纽约的日落",
+    "relevantIds": [],
+    "kind": "无匹配",
+    "note": "库内未写纽约经历，不能凭日落造回忆"
+  },
+  {
+    "id": "q32",
+    "query": "大阪环球影城",
+    "relevantIds": [],
+    "kind": "无匹配",
+    "note": "库外地点"
+  },
+  {
+    "id": "q33",
+    "query": "敦煌沙漠骑骆驼",
+    "relevantIds": [],
+    "kind": "无匹配",
+    "note": "无沙漠经历"
+  },
+  {
+    "id": "q34",
+    "query": "上周去巴黎喝咖啡",
+    "relevantIds": [],
+    "kind": "无匹配",
+    "note": "库内有咖啡但无巴黎"
+  },
+  {
+    "id": "q35",
+    "query": "北海道看流冰",
+    "relevantIds": [],
+    "kind": "无匹配",
+    "note": "无相关地点或体验"
+  },
+  {
+    "id": "q36",
+    "query": "在冰岛看极光",
+    "relevantIds": [],
+    "kind": "无匹配",
+    "note": "无极光经历"
+  }
+]

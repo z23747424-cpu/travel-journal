@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.TravelJournal.Base" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:statusBarColor">#F6F3EB</item>
+        <item name="android:navigationBarColor">#252E2A</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:colorAccent">#8A5745</item>
+        <item name="android:windowBackground">#F6F3EB</item>
+    </style>
+    <style name="Theme.TravelJournal" parent="Theme.TravelJournal.Base" />
+</resources>

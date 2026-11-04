@@ -1,0 +1,11 @@
+{
+  "datasetVersion": "teaching-v1",
+  "frozenBeforeBaseline": true,
+  "annotationStatus": "开发助手预先起草的教学手工标注，待独立人工复核",
+  "sha256": {
+    "journals.json": "f98668b510c996f30b786af1d3d0d76fe23786a84e70e70c748d7d2e9287f9c3",
+    "retrieval_queries.json": "2be1fdd6029ffcfd16e16467d59fde205a805d05b33eb72f2cfe2be84b724c1a",
+    "recommendation_cases.json": "7d8506105c08e152c671c11cbc6cbd56df94ec314ef1c5578bdd026a016831be",
+    "destinations.json": "c4111b41137fe9aff7492f601f20c229454b82b95e2333b7923d72b9b711bd3b"
+  }
+}
