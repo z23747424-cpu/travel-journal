@@ -58,7 +58,8 @@ fun loadDemoJournals(context: Context, repo: JournalRepository) {
         repo.saveJournal(Journal(id=id,title="${data.first} · 示例",date=listOf("2026-10-18","2026-10-06","2026-09-21")[index],place=data.second,
             body="${data.third}\n\n这是可删除的教学示例，配图是程序绘制的示意插画，不是真实旅行照片。你可以编辑它，或创建自己的旅行记录。",photos=listOf(photo),
             tags=listOf(listOf("海边","日落","放空"),listOf("山野","徒步","自然"),listOf("老城","漫步","街巷"))[index]+"演示记录",
-            photoDescription="教学示例插画，非真实目的地实景。"))
+            photoDescription="教学示例插画，非真实目的地实景。",
+            latitude=listOf(36.0571,30.1346,25.6892)[index],longitude=listOf(120.3355,118.1659,100.1615)[index]))
         illustration.delete()
     }
 }

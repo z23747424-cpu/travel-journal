@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>旅页 · 我的旅行地图</title>
+  <link rel="stylesheet" href="vendor/leaflet.css">
+  <link rel="stylesheet" href="map.css">
+  <script defer src="vendor/leaflet.js"></script>
+  <script defer src="map.js"></script>
+</head>
+<body>
+  <main id="map" aria-label="旅行地图，点击地点开始记录"></main>
+  <div class="map-actions"><button id="china" type="button">回到中国</button><button id="footprints" type="button">全部足迹</button></div>
+  <div id="tile-status" class="tile-status" role="status" hidden>底图暂未载入。可重试，或从全部手账继续记录。<button id="retry" type="button">重试底图</button></div>
+</body>
+</html>

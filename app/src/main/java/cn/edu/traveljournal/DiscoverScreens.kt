@@ -59,7 +59,7 @@ import kotlinx.coroutines.*
 }
 
 @OptIn(ExperimentalLayoutApi::class)
-@Composable fun InspirationScreen(destinations:List<Destination>,wishes:List<Wish>,repo:JournalRepository,
+@Composable fun InspirationScreen(wishes:List<Wish>,repo:JournalRepository,
     onSaveWish:(Wish)->Unit,onDeleteWish:(String)->Unit,onStart:(Wish)->Unit,onSettings:()->Unit) {
     var query by rememberSaveable {mutableStateOf("")}
     var origin by rememberSaveable {mutableStateOf("")}
@@ -68,6 +68,7 @@ import kotlinx.coroutines.*
     var details by rememberSaveable {mutableStateOf(false)}
     var wishlist by rememberSaveable {mutableStateOf(false)}
     var result by remember {mutableStateOf<RecommendationResult?>(null)}
+    var destinations by remember {mutableStateOf<List<Destination>>(emptyList())}
     var excluded by remember {mutableStateOf<Set<String>>(emptySet())}
     var lastQuery by remember {mutableStateOf("")}
     var error by remember {mutableStateOf("")}
@@ -77,10 +78,10 @@ import kotlinx.coroutines.*
     fun recommend(again:Boolean=false) {
         val request=listOf(query,origin.takeIf{it.isNotBlank()}?.let{"出发地：$it"},duration.takeIf{it.isNotBlank()}?.let{"天数：$it"},budget.takeIf{it.isNotBlank()}?.let{"预算：每人${it}元人民币，含主要交通住宿餐饮"}).filterNotNull().joinToString("；")
         if(request.isBlank()) return
-        val omit=if(again&&request==lastQuery) excluded+(result?.items?.map{it.id}?:emptyList()) else emptySet()
+        val omit=if(again&&request==lastQuery) excluded+destinations.map{it.name} else emptySet()
         excluded=omit;lastQuery=request;error="";result=null
         job=scope.launch {
-            try {result=AiClient().recommend(withContext(Dispatchers.IO){repo.loadConfig()},request,destinations,omit)}
+            try {val online=OnlineTravelClient().recommend(withContext(Dispatchers.IO){repo.loadConfig()},request,omit);destinations=online.destinations;result=online.result}
             catch(e:CancellationException){throw e}catch(e:Exception){error=e.message?:"推荐暂不可用，请稍后再试"}finally{job=null}
         }
     }
@@ -107,13 +108,13 @@ import kotlinx.coroutines.*
                 }}
             }
             item {Button(onClick={recommend()},enabled=query.isNotBlank()&&job?.isActive!=true,modifier=Modifier.fillMaxWidth()){
-                Icon(Icons.Outlined.Explore,null);Spacer(Modifier.width(8.dp));Text("请精灵推荐下一站")
+                Icon(Icons.Outlined.TravelExplore,null);Spacer(Modifier.width(8.dp));Text("联网搜索，寻找下一站")
             }}
-            if(job?.isActive==true) item{AiProgress("正在理解你的旅行愿望…"){job?.cancel()}}
+            if(job?.isActive==true) item{AiProgress("正在联网搜索并整理旅行建议…"){job?.cancel()}}
             if(error.isNotBlank()) item {Column{Message(error,true);TextButton(onClick=onSettings){Text("检查 AI 设置")}}}
             result?.let{r->
                 if(r.understood.isNotBlank()) item{Text("精灵理解的需求",style=MaterialTheme.typography.titleMedium);Message(r.understood)}
-                if(r.items.isEmpty()) item{Message("当前资料中没有合适的候选。可以换一个区域或放宽偏好再试。")}
+                if(r.items.isEmpty()) item{Message("这次联网资料没有提供可靠的推荐。可以补充偏好或换个描述再试。")}
                 items(r.items,key={it.id}) {recommendation-> destinations.find{it.id==recommendation.id}?.let{d->
                     val saved=wishes.any{it.destination.id==d.id}
                     DestinationCard(d,recommendation,saved){onSaveWish(Wish(destination=d,query=lastQuery,reason=recommendation.reason+recommendation.caution.takeIf{it.isNotBlank()}?.let{"\n待确认：$it"}.orEmpty()))}
@@ -121,7 +122,7 @@ import kotlinx.coroutines.*
                 if(r.items.isNotEmpty()) item{OutlinedButton(onClick={recommend(true)},enabled=job?.isActive!=true,modifier=Modifier.fillMaxWidth()){Text("不合心意，换一批")}}
             }
             if(result==null) item{EmptyLandscape();Spacer(Modifier.height(14.dp));Text("想出发的理由，可以很简单。",style=MaterialTheme.typography.titleLarge)}
-            item{Text("初版收录${destinations.size}个国内目的地。预算、实时交通、天气和开放情况需出发前核实。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+            item{Text("基于本次联网搜索，不限定预置目的地。推荐附网页来源；预算、交通、天气和开放情况请出发前核实。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
         }
     }
 }
@@ -133,7 +134,7 @@ import kotlinx.coroutines.*
         Text(d.name,style=MaterialTheme.typography.headlineMedium)
         TagRow(d.tags)
         Text(r.reason.ifBlank{d.summary},style=MaterialTheme.typography.bodyLarge)
-        Text("停留建议：${d.days}\n${d.season}",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+        if(d.days.isNotBlank()||d.season.isNotBlank())Text(listOf(d.days,d.season).filter{it.isNotBlank()}.joinToString("\n"),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
         if(r.caution.isNotBlank()) Text("待确认：${r.caution}",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.secondary)
         SourceLink(d)
         OutlinedButton(onClick=onSave,enabled=!saved){Icon(if(saved)Icons.Outlined.BookmarkAdded else Icons.Outlined.BookmarkAdd,null);Spacer(Modifier.width(8.dp));Text(if(saved)"已在想去清单" else "收藏这份期待")}

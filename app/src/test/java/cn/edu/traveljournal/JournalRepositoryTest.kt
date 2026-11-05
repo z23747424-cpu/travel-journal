@@ -171,4 +171,37 @@ class JournalRepositoryTest {
         assertThrows(IllegalArgumentException::class.java) { repository.saveJournal(unfinished) }
         assertTrue(repository.journals().isEmpty())
     }
+
+    @Test fun mapCoordinatesSurviveSaveDraftAndBackup() {
+        val entry = Journal(id = "map-point", title = "西湖边", body = "坐了一下午", latitude = 30.2489, longitude = 120.1481)
+        repository.saveJournal(entry)
+        repository.saveDraft(entry.copy(title = "下一页"))
+        assertEquals(entry.latitude, repository.journals().single().latitude)
+        assertEquals(entry.longitude, repository.loadDraft()!!.longitude)
+        val archive = ByteArrayOutputStream()
+        repository.exportBackup(archive)
+        repository.importBackup(ByteArrayInputStream(archive.toByteArray()))
+        assertEquals(2, repository.journals().size)
+        assertTrue(repository.journals().all { it.latitude == entry.latitude && it.longitude == entry.longitude })
+    }
+
+    @Test fun oldRecordsWithoutCoordinatesRemainEditable() {
+        val json = journalJson(Journal(title = "旧手账", body = "原来的文字"))
+        json.remove("latitude"); json.remove("longitude")
+        val restored = journalFromJson(json)
+        assertNull(restored.latitude)
+        assertNull(restored.longitude)
+        repository.saveJournal(restored.copy(latitude = -33.8688, longitude = 151.2093))
+        assertEquals(-33.8688, repository.journals().single().latitude!!, 0.000001)
+    }
+
+    @Test fun incompleteAndOutOfRangeCoordinatesAreRejected() {
+        val entry = Journal(title = "位置校验", body = "正文")
+        listOf(entry.copy(latitude = 30.0), entry.copy(longitude = 120.0),
+            entry.copy(latitude = 91.0, longitude = 120.0), entry.copy(latitude = 30.0, longitude = -181.0),
+            entry.copy(latitude = Double.NaN, longitude = 0.0)).forEach { invalid ->
+            assertThrows(IllegalArgumentException::class.java) { repository.saveJournal(invalid) }
+        }
+        assertTrue(repository.journals().isEmpty())
+    }
 }

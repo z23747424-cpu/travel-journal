@@ -3,3 +3,4 @@
 *.jar binary
 *.apk binary
 *.zip binary
+app/src/main/assets/map/vendor/* -text -whitespace

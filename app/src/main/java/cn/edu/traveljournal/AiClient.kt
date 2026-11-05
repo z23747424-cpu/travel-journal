@@ -179,7 +179,7 @@ class AiClient internal constructor(private val transport: AiTransport) {
         "根据这篇已保存手账，写一段100字以内、温柔简短的回顾候选。不虚构文字未提供的行程、天气、感受和人物身份；不要自行修改记录。仅返回中文回顾正文。",
         JSONObject().put("journal", compactJournal(journal))).trim().take(1200)
 
-    private suspend fun call(config: AiConfig, instruction: String, payload: Any): String {
+    internal suspend fun call(config: AiConfig, instruction: String, payload: Any): String {
         checkConfig(config)
         val user = if (payload is JSONObject) payload.put("spiritName", config.spiritName.take(80)).toString() else payload
         val request = JSONObject().put("model", config.model.trim()).put("temperature", 0.2).put("max_tokens", 2500)
@@ -191,7 +191,7 @@ class AiClient internal constructor(private val transport: AiTransport) {
         catch (_: Exception) { throw AiException("AI 请求失败，请检查网络和服务配置；输入已保留") }
     }
 
-    private fun checkConfig(config: AiConfig) {
+    internal fun checkConfig(config: AiConfig) {
         if (!config.consent) throw AiException("请先在设置中同意将选定文字或照片发送给配置的 AI 服务商")
         try { normalizeEndpoint(config.baseUrl) } catch (_: IllegalArgumentException) { throw AiException("请在设置中填写有效的 HTTPS 服务地址") }
         if (config.apiKey.isBlank() || config.model.isBlank()) throw AiException("请先在设置中填写 API 密钥和模型名称")
@@ -264,6 +264,7 @@ internal fun destinationInRegion(destination: Destination, requested: String): B
 
 /** Default TLS validation is retained. No redirects are followed, including same-host redirects. */
 internal class HttpsAiTransport(
+    private val rawEndpoint: String? = null,
     private val connectionFactory: (String) -> HttpURLConnection = { URL(it).openConnection() as HttpURLConnection },
 ) : AiTransport {
     override suspend fun complete(config: AiConfig, request: JSONObject): String = suspendCancellableCoroutine { continuation ->
@@ -272,7 +273,7 @@ internal class HttpsAiTransport(
             var active: HttpURLConnection? = null
             try {
                 if (!continuation.isActive) return@submit
-                active = connectionFactory(normalizeEndpoint(config.baseUrl))
+                active = connectionFactory(rawEndpoint ?: normalizeEndpoint(config.baseUrl))
                 connection.set(active)
                 if (!continuation.isActive) return@submit
                 active.instanceFollowRedirects = false
@@ -299,6 +300,12 @@ internal class HttpsAiTransport(
                 val bytes = ByteArrayOutputStream()
                 active.inputStream.use { copyLimited(it, bytes, 2L * 1024 * 1024) }
                 val response = try { JSONObject(bytes.toString("UTF-8")) } catch (_: Exception) { throw AiException("服务未返回有效的 JSON 响应，请检查接口地址") }
+                if (rawEndpoint != null) {
+                    active.disconnect()
+                    connection.compareAndSet(active, null)
+                    if (continuation.isActive) continuation.resume(response.toString())
+                    return@submit
+                }
                 val message = try { response.getJSONArray("choices").getJSONObject(0).getJSONObject("message") } catch (_: Exception) { throw AiException("响应缺少 Chat Completions 消息，请检查服务兼容性") }
                 val content = message.opt("content")
                 val text = when (content) {

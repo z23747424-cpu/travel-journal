@@ -87,13 +87,6 @@ class JournalRepository(context: Context) : AutoCloseable {
         }
     }
 
-    fun destinations(): List<Destination> = app.assets.open("destinations.json").bufferedReader().use { reader ->
-        val text = reader.readText()
-        val array = if (text.trimStart().startsWith("[")) JSONArray(text) else JSONObject(text).getJSONArray("destinations")
-        require(array.length() <= 1000) { "目的地资料过大" }
-        (0 until array.length()).map { destinationFromJson(array.getJSONObject(it)).also(::validateDestination) }
-    }
-
     fun photoFile(name: String): File {
         require(PHOTO_NAME.matches(name)) { "照片文件名无效" }
         return File(photoDir, name).also { require(it.canonicalFile.parentFile == photoDir.canonicalFile) { "照片路径无效" } }
@@ -139,13 +132,20 @@ class JournalRepository(context: Context) : AutoCloseable {
             cipher.init(Cipher.DECRYPT_MODE, encryptionKey(), GCMParameterSpec(128, Base64.decode(preferences.getString("iv", ""), Base64.NO_WRAP)))
             String(cipher.doFinal(Base64.decode(cipherText, Base64.NO_WRAP)), Charsets.UTF_8)
         } catch (_: Exception) { throw IllegalStateException("设备无法解密已保存的密钥，请清除密钥并重新填写") }
+        val searchCipherText=preferences.getString("searchCiphertext", "").orEmpty()
+        val searchKey=if(searchCipherText.isBlank()) "" else try {
+            val cipher=Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.DECRYPT_MODE,encryptionKey(),GCMParameterSpec(128,Base64.decode(preferences.getString("searchIv",""),Base64.NO_WRAP)))
+            String(cipher.doFinal(Base64.decode(searchCipherText,Base64.NO_WRAP)),Charsets.UTF_8)
+        }catch(_:Exception){throw IllegalStateException("设备无法解密搜索密钥，请清除密钥并重新填写")}
         return AiConfig(preferences.getString("baseUrl", "").orEmpty(), apiKey,
-            preferences.getString("model", "").orEmpty(), preferences.getString("spiritName", "").orEmpty(), preferences.getBoolean("consent", false))
+            preferences.getString("model", "").orEmpty(), preferences.getString("spiritName", "").orEmpty(), preferences.getBoolean("consent", false),searchKey)
     }
 
     @Synchronized fun saveConfig(c: AiConfig) {
-        require(c.model.length <= 200 && c.spiritName.length <= 80 && c.apiKey.length <= 8192) { "AI 配置过长" }
+        require(c.model.length <= 200 && c.spiritName.length <= 80 && c.apiKey.length <= 8192 && c.searchApiKey.length<=8192) { "AI 配置过长" }
         require(!c.apiKey.contains('\n') && !c.apiKey.contains('\r')) { "密钥不能包含换行" }
+        require(!c.searchApiKey.contains('\n') && !c.searchApiKey.contains('\r')) { "搜索密钥不能包含换行" }
         val endpoint = if (c.baseUrl.isBlank()) "" else normalizeEndpoint(c.baseUrl)
         val editor = preferences.edit().putString("baseUrl", endpoint).putString("model", c.model.trim())
             .putString("spiritName", c.spiritName.trim()).putBoolean("consent", c.consent)
@@ -157,6 +157,14 @@ class JournalRepository(context: Context) : AutoCloseable {
                 editor.putString("iv", Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
                     .putString("ciphertext", Base64.encodeToString(encrypted, Base64.NO_WRAP))
             } catch (_: Exception) { throw IllegalStateException("设备安全存储不可用，密钥未保存") }
+        }
+        if(c.searchApiKey.isBlank())editor.remove("searchIv").remove("searchCiphertext")else {
+            try {
+                val cipher=Cipher.getInstance("AES/GCM/NoPadding")
+                cipher.init(Cipher.ENCRYPT_MODE,encryptionKey())
+                val encrypted=cipher.doFinal(c.searchApiKey.trim().toByteArray(Charsets.UTF_8))
+                editor.putString("searchIv",Base64.encodeToString(cipher.iv,Base64.NO_WRAP)).putString("searchCiphertext",Base64.encodeToString(encrypted,Base64.NO_WRAP))
+            }catch(_:Exception){throw IllegalStateException("设备安全存储不可用，搜索密钥未保存")}
         }
         check(editor.commit()) { "配置保存失败，请检查存储空间" }
     }
@@ -287,6 +295,8 @@ internal fun validateJournal(j: Journal, draft: Boolean = false) {
     require(j.tags.size <= 24 && j.tags.all { it.length <= 80 }) { "标签过多或过长" }
     require(j.createdAt >= 0 && j.updatedAt >= 0) { "记录时间无效" }
     require(j.wishId == null || j.wishId.isNotBlank() && j.wishId.length <= 128) { "收藏关联无效" }
+    require((j.latitude == null) == (j.longitude == null)) { "地图位置需要完整的经纬度" }
+    require(j.latitude == null || validCoordinates(j.latitude, j.longitude!!)) { "地图经纬度超出有效范围" }
     if (!draft) try { LocalDate.parse(j.date) } catch (_: Exception) { throw IllegalArgumentException("日期请使用 yyyy-MM-dd 格式") }
 }
 

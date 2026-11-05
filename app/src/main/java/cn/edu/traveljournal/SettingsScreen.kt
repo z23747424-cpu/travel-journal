@@ -24,6 +24,7 @@ import java.time.LocalDate
     var model by rememberSaveable(config.model){mutableStateOf(config.model)}
     // The credential is deliberately excluded from saved instance state and exports.
     var key by remember(config.apiKey){mutableStateOf(config.apiKey)}
+    var searchKey by remember(config.searchApiKey){mutableStateOf(config.searchApiKey)}
     var visible by remember{mutableStateOf(false)}
     var consent by rememberSaveable(config.consent){mutableStateOf(config.consent)}
     var result by remember{mutableStateOf("")}
@@ -34,7 +35,7 @@ import java.time.LocalDate
     var importUri by remember{mutableStateOf<android.net.Uri?>(null)}
     val scope=rememberCoroutineScope()
     val context=LocalContext.current
-    fun current()=AiConfig(endpoint.trim(),key.trim(),model.trim(),name.trim().take(30),consent)
+    fun current()=AiConfig(endpoint.trim(),key.trim(),model.trim(),name.trim().take(30),consent,searchKey.trim())
     DisposableEffect(Unit){onDispose{task?.cancel()}}
     val exporter=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")){uri->
         if(uri!=null) scope.launch{
@@ -54,7 +55,10 @@ import java.time.LocalDate
         item{OutlinedTextField(key,{key=it},label={Text("API 密钥")},modifier=Modifier.fillMaxWidth(),singleLine=true,
             visualTransformation=if(visible)VisualTransformation.None else PasswordVisualTransformation(),trailingIcon={IconButton(onClick={visible=!visible}){Icon(if(visible)Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,if(visible)"隐藏密钥" else "显示密钥")}})}
         item{OutlinedTextField(model,{model=it},label={Text("模型名称")},placeholder={Text("填写服务商提供的模型标识")},modifier=Modifier.fillMaxWidth(),singleLine=true)}
-        item{Row(verticalAlignment=Alignment.Top){Checkbox(consent,{consent=it});Text("我了解：使用精灵时，选中的照片或相关文字会发送给这里配置的服务商，并可能产生调用费用。",modifier=Modifier.padding(top=10.dp),style=MaterialTheme.typography.bodyMedium)}}
+        item{HorizontalDivider();Text("联网搜索",style=MaterialTheme.typography.titleLarge);Message("旅行推荐先通过 Tavily 检索网页，再请精灵整理。不使用内置目的地范围；普通模型接口不会自动拥有联网能力。")}
+        item{OutlinedTextField(searchKey,{searchKey=it},label={Text("Tavily 搜索 API 密钥")},modifier=Modifier.fillMaxWidth(),singleLine=true,visualTransformation=PasswordVisualTransformation())}
+        item{TextButton(onClick={searchKey="";onSave(current().copy(searchApiKey=""))}){Text("清除搜索密钥")}}
+        item{Row(verticalAlignment=Alignment.Top){Checkbox(consent,{consent=it});Text("我了解：使用精灵时，选定照片或文字会发送给配置的 AI 服务商；旅行推荐的出游条件会发送给 Tavily 搜索服务，网页资料交给 AI 整理。调用可能产生费用。地图只加载所浏览区域的底图，不发送手账正文。",modifier=Modifier.padding(top=10.dp),style=MaterialTheme.typography.bodyMedium)}}
         item{Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){
             Button(onClick={
                 try{if(endpoint.isNotBlank())normalizeEndpoint(endpoint);onSave(current());result="";resultError=false}
@@ -76,7 +80,7 @@ import java.time.LocalDate
             OutlinedButton(onClick={importer.launch(arrayOf("application/zip","application/octet-stream"))},enabled=!archiveBusy){Text("导入备份")}
         }}
         if(archiveBusy)item{LinearProgressIndicator(Modifier.fillMaxWidth());Message("正在处理备份，请稍候…")}
-        item{HorizontalDivider();Spacer(Modifier.height(18.dp));Text("当前主题 · 杂志",style=MaterialTheme.typography.titleMedium);Message("用照片讲故事，让文字留住当时的心情。");Text("旅页 1.0 · 个人旅行手账\nAI 提供建议，记录由你决定。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+        item{HorizontalDivider();Spacer(Modifier.height(18.dp));Text("当前主题 · 杂志",style=MaterialTheme.typography.titleMedium);Message("从地图出发，用照片和文字留住当时的心情。");Text("旅页 1.1 · 地图旅行手账\nAI 提供建议，记录由你决定。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
     }
     if(confirmClear)AlertDialog(onDismissRequest={confirmClear=false},title={Text("清除 AI 密钥？")},text={Text("本地手账和其他设置会保留。之后可重新填写密钥。")},confirmButton={TextButton(onClick={key="";onSave(current().copy(apiKey=""));confirmClear=false;result=""}){Text("清除")}},dismissButton={TextButton(onClick={confirmClear=false}){Text("取消")}})
     if(importUri!=null)AlertDialog(onDismissRequest={importUri=null},title={Text("导入手账备份？")},text={Text("会合并手账、照片与想去清单，同名标识将作为新记录导入。现有记录不会被覆盖。")},confirmButton={TextButton(onClick={

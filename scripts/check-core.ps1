@@ -128,7 +128,7 @@ if (-not (Test-Path -LiteralPath $stdlib)) { throw "Kotlin standard library miss
 $classpath = @($stdlib, $coroutines, $junit, $hamcrest, $json, $exifJar, $androidJar) -join [System.IO.Path]::PathSeparator
 $sourceRoot = Join-Path $projectRoot "app/src/main/java/cn/edu/traveljournal"
 $testRoot = Join-Path $projectRoot "app/src/test/java/cn/edu/traveljournal"
-$sources = @("Models.kt", "JournalRepository.kt", "Backup.kt", "AiClient.kt", "Search.kt") | ForEach-Object { Join-Path $sourceRoot $_ }
+$sources = @("Models.kt", "JournalRepository.kt", "Backup.kt", "AiClient.kt", "Search.kt", "MapLogic.kt") | ForEach-Object { Join-Path $sourceRoot $_ }
 $tests = @("CoreLogicTest.kt", "AiWorkflowTest.kt") | ForEach-Object { Join-Path $testRoot $_ }
 foreach ($file in @($sources) + @($tests)) {
     if (-not (Test-Path -LiteralPath $file)) { throw "Required source file missing: $file" }
@@ -142,7 +142,7 @@ $environmentLog = Join-Path $checkRoot "environment.log"
 @("Java: $java", "Kotlin: $KotlinHome", "Android: $androidJar", "JUnit: $junit", "Hamcrest: $hamcrest", "JSON: $json", "Coroutines: $coroutines") | Set-Content -LiteralPath $environmentLog -Encoding UTF8
 & $java -cp "$compilerLib/*" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler -version 2>&1 | ForEach-Object { Write-Host $_; $_ | Add-Content -LiteralPath $environmentLog -Encoding UTF8 }
 if ($LASTEXITCODE -ne 0) { throw "Cannot run Kotlin compiler. See $environmentLog" }
-Write-Host "Compiling five production core sources and the two formal JVM test classes..."
+Write-Host "Compiling production core sources and the two formal JVM test classes..."
 & $java -cp "$compilerLib/*" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler -no-stdlib -jvm-target 17 -classpath $classpath -d $classes @sources @tests *> $compileLog
 if ($LASTEXITCODE -ne 0) { Get-Content -LiteralPath $compileLog; throw "Core compilation failed. See $compileLog" }
 & $java -cp "$classes$([System.IO.Path]::PathSeparator)$classpath" org.junit.runner.JUnitCore cn.edu.traveljournal.CoreLogicTest cn.edu.traveljournal.AiWorkflowTest *> $testLog

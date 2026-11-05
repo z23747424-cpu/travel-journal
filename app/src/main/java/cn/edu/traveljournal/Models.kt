@@ -15,6 +15,8 @@ data class Journal(
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val wishId: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
 )
 
 data class Destination(
@@ -46,8 +48,9 @@ data class AiConfig(
     val model: String = "",
     val spiritName: String = "",
     val consent: Boolean = false,
+    val searchApiKey: String = "",
 ) {
-    override fun toString(): String = "AiConfig(baseUrl=$baseUrl, apiKey=[redacted], model=$model, spiritName=$spiritName, consent=$consent)"
+    override fun toString(): String = "AiConfig(baseUrl=$baseUrl, apiKey=[redacted], model=$model, spiritName=$spiritName, consent=$consent, searchApiKey=[redacted])"
 }
 
 data class SearchHit(val id: String, val reason: String = "")

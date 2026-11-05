@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -56,7 +57,7 @@ import java.time.LocalDate
 }
 
 @Composable fun JournalDetail(journal: Journal, repo: JournalRepository, spirit: String, onEdit: () -> Unit,
-    onDelete: () -> Unit, onBack: () -> Unit, onError: (String) -> Unit) {
+    onDelete: () -> Unit, onBack: () -> Unit, onError: (String) -> Unit, onNewHere: (() -> Unit)? = null) {
     var delete by remember { mutableStateOf(false) }
     var fullPhoto by remember { mutableStateOf<String?>(null) }
     var recall by remember(journal.id) { mutableStateOf("") }
@@ -74,6 +75,7 @@ import java.time.LocalDate
         item { Column(Modifier.padding(horizontal=24.dp),verticalArrangement=Arrangement.spacedBy(14.dp)) {
             Text(journal.title,style=MaterialTheme.typography.headlineLarge)
             Text("${journal.date}  ·  ${journal.place.ifBlank{"旅途中的一站"}}",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.primary)
+            journal.mapPoint()?.let{point->Text("地图位置 · ${point.label()}",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant);if(onNewHere!=null)TextButton(onClick=onNewHere){Text("在这里再写一篇")}}
             TagRow(journal.tags)
             if(journal.body.isNotBlank()) Text(journal.body,style=MaterialTheme.typography.bodyLarge)
         } }
@@ -114,6 +116,7 @@ import java.time.LocalDate
     var tagsText by remember(draft.id) { mutableStateOf(draft.tags.joinToString("，")) }
     var selectedForAi by remember { mutableStateOf<Set<String>>(emptySet()) }
     var showPhoto by remember { mutableStateOf<String?>(null) }
+    var mapPicker by rememberSaveable { mutableStateOf(false) }
     DisposableEffect(Unit) { onDispose { aiTask?.cancel() } }
     val latestDraft by rememberUpdatedState(draft)
     BackHandler(enabled=importing){onError("照片正在导入，请稍候")}
@@ -146,6 +149,13 @@ import java.time.LocalDate
             }){Icon(Icons.Outlined.CalendarToday,null,Modifier.size(18.dp));Spacer(Modifier.width(8.dp));Text(draft.date)}
         } }
         item { OutlinedTextField(draft.place,{onChange(draft.copy(place=it))},label={Text("地点（可选）")},modifier=Modifier.fillMaxWidth(),singleLine=true) }
+        item { Column {
+            draft.mapPoint()?.let{Text("已标地图位置 · ${it.label()}",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+            Row {
+                TextButton(onClick={mapPicker=true},enabled=!saving&&!importing){Icon(Icons.Outlined.Place,null);Spacer(Modifier.width(6.dp));Text(if(draft.mapPoint()==null)"在地图选点" else "更改地图位置")}
+                if(draft.mapPoint()!=null)TextButton(onClick={onChange(draft.copy(latitude=null,longitude=null))},enabled=!saving&&!importing){Text("移除标注")}
+            }
+        } }
         item { Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
             Text("旅途照片  ${draft.photos.size}/12",style=MaterialTheme.typography.titleMedium)
             TextButton(onClick={picker.launch(arrayOf("image/*"))},enabled=!importing&&draft.photos.size<12){Icon(Icons.Outlined.AddPhotoAlternate,null);Spacer(Modifier.width(6.dp));Text(if(importing)"导入中" else "添加照片")}
@@ -185,6 +195,7 @@ import java.time.LocalDate
             Text("生成的标签和文字由你确认后使用。草稿会在本机暂存。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         } }
     }
+    if(mapPicker)MapLocationPicker(latestDraft.mapPoint(),latestDraft.place,onDismiss={mapPicker=false},onChoose={point,name->onChange(latestDraft.copy(place=name,latitude=point.latitude,longitude=point.longitude));mapPicker=false})
     if(suggestion!=null) AlertDialog(onDismissRequest={suggestion=null},title={Text("精灵的整理建议")},text={Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {
         OutlinedTextField(suggestedTitle,{suggestedTitle=it},label={Text("建议标题")})
         OutlinedTextField(suggestedTags,{suggestedTags=it},label={Text("候选标签")})

@@ -29,9 +29,9 @@ class JournalFlowTest {
         var scenario:ActivityScenario<MainActivity>?=null
         try{
             scenario=ActivityScenario.launch(MainActivity::class.java)
-            ui.waitUntil(15000){ui.onAllNodesWithText("把旅途，留在这一页").fetchSemanticsNodes().isNotEmpty()}
-            if(ui.onAllNodesWithText("记录我的旅行").fetchSemanticsNodes().isNotEmpty())ui.onNodeWithText("记录我的旅行").performClick()
-            else ui.onNodeWithText("记录旅行").performClick()
+            ui.waitUntil(15000){ui.onAllNodesWithText("我的旅行地图").fetchSemanticsNodes().isNotEmpty()}
+            ui.onNodeWithContentDescription("全部手账").performClick()
+            ui.onNodeWithText("新建手账").performClick()
             ui.onNodeWithText("手账标题").performTextInput(title)
             ui.onNodeWithText("地点（可选）").performTextInput("海边")
             ui.onNodeWithText("这一路的故事").performScrollTo().performTextInput("在海边看日落，记住温暖的晚霞。")
@@ -41,7 +41,7 @@ class JournalFlowTest {
             ui.waitUntil(10000){ui.onAllNodesWithText("编辑",substring=false).fetchSemanticsNodes().isNotEmpty()}
             shot("detail")
             scenario.close();scenario=ActivityScenario.launch(MainActivity::class.java)
-            ui.waitUntil(15000){ui.onAllNodesWithText("把旅途，留在这一页").fetchSemanticsNodes().isNotEmpty()}
+            ui.waitUntil(15000){ui.onAllNodesWithText("我的旅行地图").fetchSemanticsNodes().isNotEmpty()}
             assertTrue(repo.journals().any{it.id==savedId})
             shot("home")
             ui.onNodeWithText("搜索").performClick()

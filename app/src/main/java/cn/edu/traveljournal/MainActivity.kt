@@ -38,11 +38,11 @@ class MainActivity:ComponentActivity(){
     val snackbar=remember{SnackbarHostState()}
     var journals by remember{mutableStateOf<List<Journal>>(emptyList())}
     var wishes by remember{mutableStateOf<List<Wish>>(emptyList())}
-    var destinations by remember{mutableStateOf<List<Destination>>(emptyList())}
     var config by remember{mutableStateOf(AiConfig())}
     var loading by remember{mutableStateOf(true)}
     var loadError by remember{mutableStateOf("")}
     var tab by rememberSaveable{mutableIntStateOf(0)}
+    var archive by rememberSaveable{mutableStateOf(false)}
     var detailId by rememberSaveable{mutableStateOf<String?>(null)}
     val draftSaver=remember { Saver<Journal?,String>(save={it?.let{j->journalJson(j).toString()}.orEmpty()},restore={text->text.takeIf{it.isNotBlank()}?.let{runCatching{journalFromJson(JSONObject(it))}.getOrNull()}}) }
     var draft by rememberSaveable(stateSaver=draftSaver){mutableStateOf<Journal?>(null)}
@@ -58,7 +58,7 @@ class MainActivity:ComponentActivity(){
         if(draft==null){parkedDraft=withContext(Dispatchers.IO){repo.loadDraft()};if(recovered!=null)recovered=parkedDraft}
     }
     LaunchedEffect(Unit){
-        try{refresh();destinations=withContext(Dispatchers.IO){repo.destinations()};if(draft==null){recovered=withContext(Dispatchers.IO){repo.loadDraft()};parkedDraft=recovered}}
+        try{refresh();if(draft==null){recovered=withContext(Dispatchers.IO){repo.loadDraft()};parkedDraft=recovered}}
         catch(e:Exception){loadError=e.message?:"本地内容暂时无法载入"}
         finally{loading=false}
     }
@@ -87,28 +87,31 @@ class MainActivity:ComponentActivity(){
             finally{saving=false}
         }
     }
-    BackHandler(enabled=saving||draft!=null||detailId!=null||tab!=0){if(!saving)when{draft!=null->leave=true;detailId!=null->detailId=null;else->tab=0}}
+    BackHandler(enabled=saving||draft!=null||detailId!=null||tab!=0||archive){if(!saving)when{draft!=null->leave=true;detailId!=null->detailId=null;archive->archive=false;else->tab=0}}
     val detail=journals.find{it.id==detailId}
-    val labels=listOf("手账","搜索","灵感","设置")
-    val icons=listOf(Icons.Outlined.AutoStories,Icons.Outlined.Search,Icons.Outlined.Explore,Icons.Outlined.Tune)
+    val labels=listOf("地图","搜索","灵感","设置")
+    val icons=listOf(Icons.Outlined.Map,Icons.Outlined.Search,Icons.Outlined.Explore,Icons.Outlined.Tune)
     BoxWithConstraints{
         val wide=maxWidth>=720.dp
         Scaffold(snackbarHost={SnackbarHost(snackbar)},
-            bottomBar={if(!wide&&draft==null&&detail==null)NavigationBar(containerColor=MaterialTheme.colorScheme.surface){labels.forEachIndexed{i,label->NavigationBarItem(selected=tab==i,onClick={tab=i},icon={Icon(icons[i],label)},label={Text(label)},colors=NavigationBarItemDefaults.colors(indicatorColor=MaterialTheme.colorScheme.secondaryContainer))}}},
-            floatingActionButton={if(tab==0&&draft==null&&detail==null&&journals.isNotEmpty())ExtendedFloatingActionButton(onClick={create()},icon={Icon(Icons.Outlined.Add,null)},text={Text("记录旅行")},containerColor=MaterialTheme.colorScheme.primary,contentColor=MaterialTheme.colorScheme.onPrimary)}
+            bottomBar={if(!wide&&draft==null&&detail==null&&!archive)NavigationBar(containerColor=MaterialTheme.colorScheme.surface){labels.forEachIndexed{i,label->NavigationBarItem(selected=tab==i,onClick={tab=i},icon={Icon(icons[i],label)},label={Text(label)},colors=NavigationBarItemDefaults.colors(indicatorColor=MaterialTheme.colorScheme.secondaryContainer))}}}
         ){padding->
             Row(Modifier.fillMaxSize().padding(padding)){
-                if(wide&&draft==null&&detail==null)NavigationRail{labels.forEachIndexed{i,label->NavigationRailItem(selected=tab==i,onClick={tab=i},icon={Icon(icons[i],label)},label={Text(label)})}}
+                if(wide&&draft==null&&detail==null&&!archive)NavigationRail{labels.forEachIndexed{i,label->NavigationRailItem(selected=tab==i,onClick={tab=i},icon={Icon(icons[i],label)},label={Text(label)})}}
                 Box(Modifier.weight(1f).fillMaxHeight()){
                     when{
                         loading->Column(Modifier.align(Alignment.Center),horizontalAlignment=Alignment.CenterHorizontally){CircularProgressIndicator();Spacer(Modifier.height(16.dp));Text("正在翻开你的旅行手账…")}
-                        loadError.isNotBlank()->Column(Modifier.padding(24.dp)){Message(loadError,true);Button(onClick={scope.launch{try{refresh();destinations=withContext(Dispatchers.IO){repo.destinations()};loadError=""}catch(e:Exception){message(e.message?:"载入失败")}}}){Text("重试载入")}}
+                        loadError.isNotBlank()->Column(Modifier.padding(24.dp)){Message(loadError,true);Button(onClick={scope.launch{try{refresh();loadError=""}catch(e:Exception){message(e.message?:"载入失败")}}}){Text("重试载入")}}
                         draft!=null->JournalEditor(draft!!,repo,{if(!saving)draft=it},::save,{if(!saving)leave=true},::message,saving)
-                        detail!=null->JournalDetail(detail,repo,config.spiritName,onEdit={create(detail)},onDelete={scope.launch{try{withContext(Dispatchers.IO){repo.deleteJournal(detail.id)};refresh();detailId=null;message("手账已删除")}catch(e:Exception){message(e.message?:"删除失败")}}},onBack={detailId=null},onError=::message)
+                        detail!=null->JournalDetail(detail,repo,config.spiritName,onEdit={create(detail)},onDelete={scope.launch{try{withContext(Dispatchers.IO){repo.deleteJournal(detail.id)};refresh();detailId=null;message("手账已删除")}catch(e:Exception){message(e.message?:"删除失败")}}},onBack={detailId=null},onError=::message,onNewHere={create(Journal(place=detail.place,latitude=detail.latitude,longitude=detail.longitude))})
+                        archive&&tab==0->Column(Modifier.fillMaxSize()) {
+                            Row(Modifier.fillMaxWidth().padding(horizontal=12.dp),verticalAlignment=Alignment.CenterVertically){TextButton(onClick={archive=false}){Text("返回地图")};Spacer(Modifier.weight(1f));TextButton(onClick={create()}){Text("新建手账")}}
+                            Box(Modifier.weight(1f)){JournalHome(journals,repo,{create()},{detailId=it.id},onDemo={scope.launch{try{withContext(Dispatchers.IO){loadDemoJournals(context,repo)};refresh()}catch(e:Exception){message(e.message?:"示例载入失败")}}},onInspiration={archive=false;tab=2},hasDraft=parkedDraft!=null,onResume={recovered=parkedDraft})}
+                        }
                         else->stateHolder.SaveableStateProvider(tab){when(tab){
-                            0->JournalHome(journals,repo,{create()},{detailId=it.id},onDemo={scope.launch{try{withContext(Dispatchers.IO){loadDemoJournals(context,repo)};refresh();message("已添加3篇标明为示例的手账")}catch(e:Exception){message(e.message?:"示例载入失败")}}},onInspiration={tab=2},hasDraft=parkedDraft!=null,onResume={recovered=parkedDraft})
+                            0->MapHome(journals,::create,{detailId=it.id},{archive=true},onDemo={scope.launch{try{withContext(Dispatchers.IO){loadDemoJournals(context,repo)};refresh();message("已添加3篇教学示例，地图坐标仅作演示")}catch(e:Exception){message(e.message?:"示例载入失败")}}},hasDraft=parkedDraft!=null,onResume={recovered=parkedDraft},onError=::message)
                             1->SearchScreen(journals,repo,{detailId=it.id},{tab=3})
-                            2->InspirationScreen(destinations,wishes,repo,onSaveWish={w->scope.launch{try{withContext(Dispatchers.IO){repo.saveWish(w)};refresh();message("已保存到想去清单")}catch(e:Exception){message(e.message?:"收藏失败")}}},onDeleteWish={id->scope.launch{try{withContext(Dispatchers.IO){repo.deleteWish(id)};refresh();message("已移除收藏")}catch(e:Exception){message(e.message?:"移除失败")}}},onStart={wish->create(Journal(place=wish.destination.name,title="${wish.destination.name}旅行",wishId=wish.id))},onSettings={tab=3})
+                            2->InspirationScreen(wishes,repo,onSaveWish={w->scope.launch{try{withContext(Dispatchers.IO){repo.saveWish(w)};refresh();message("已保存到想去清单")}catch(e:Exception){message(e.message?:"收藏失败")}}},onDeleteWish={id->scope.launch{try{withContext(Dispatchers.IO){repo.deleteWish(id)};refresh();message("已移除收藏")}catch(e:Exception){message(e.message?:"移除失败")}}},onStart={wish->create(Journal(place=wish.destination.name,title="${wish.destination.name}旅行",wishId=wish.id))},onSettings={tab=3})
                             3->SettingsScreen(config,repo,onSave={c->scope.launch{try{withContext(Dispatchers.IO){repo.saveConfig(c)};refresh();message("设置已保存")}catch(e:Exception){message(e.message?:"设置保存失败")}}},onImported={scope.launch{refresh()}},onMessage=::message)
                         }}
                     }

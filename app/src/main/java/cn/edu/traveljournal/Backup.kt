@@ -111,11 +111,13 @@ internal fun journalJson(j: Journal): JSONObject = JSONObject()
     .put("id", j.id).put("title", j.title).put("date", j.date).put("place", j.place).put("body", j.body)
     .put("photos", JSONArray(j.photos)).put("tags", JSONArray(j.tags)).put("photoDescription", j.photoDescription)
     .put("createdAt", j.createdAt).put("updatedAt", j.updatedAt).put("wishId", j.wishId ?: JSONObject.NULL)
+    .put("latitude", j.latitude ?: JSONObject.NULL).put("longitude", j.longitude ?: JSONObject.NULL)
 
 internal fun journalFromJson(j: JSONObject): Journal = Journal(
     id = strictString(j, "id"), title = strictString(j, "title"), date = strictString(j, "date"),
     place = strictString(j, "place", ""), body = strictString(j, "body", ""), photos = stringList(j, "photos"), tags = stringList(j, "tags"),
     photoDescription = strictString(j, "photoDescription", ""), createdAt = strictLong(j, "createdAt"), updatedAt = strictLong(j, "updatedAt"), wishId = nullableString(j, "wishId"),
+    latitude = nullableDouble(j, "latitude"), longitude = nullableDouble(j, "longitude"),
 )
 
 internal fun destinationJson(d: Destination): JSONObject = JSONObject()
@@ -157,6 +159,13 @@ internal fun stringList(json: JSONObject, key: String): List<String> {
 }
 
 private fun nullableString(json: JSONObject, key: String): String? = if (!json.has(key) || json.isNull(key)) null else strictString(json, key)
+
+private fun nullableDouble(json: JSONObject, key: String): Double? {
+    if (!json.has(key) || json.isNull(key)) return null
+    val value = json.get(key)
+    require(value is Number && value.toDouble().isFinite()) { "地图坐标必须是有效数值" }
+    return value.toDouble()
+}
 
 private fun strictLong(json: JSONObject, key: String): Long {
     val value = json.get(key)

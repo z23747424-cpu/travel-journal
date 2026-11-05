@@ -12,7 +12,7 @@ import unicodedata
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-CATALOG = ROOT.parent / "app/src/main/assets/destinations.json"
+CATALOG = ROOT / "destinations.json"  # Frozen v1.0 experiment only; not bundled with the app.
 FROZEN_INPUTS = ("journals.json", "retrieval_queries.json", "recommendation_cases.json")
 FIELDS = ("title", "place", "date", "tags", "photoDescription", "body")
 
