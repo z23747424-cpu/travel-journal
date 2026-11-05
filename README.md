@@ -33,6 +33,8 @@ GitHub 下载：[1.2.0 完整地图与插画版](https://github.com/z23747424-cp
 
 ## 工程
 
+共同开发请先阅读 [同学协作与 AI 交接指南](docs/COLLABORATION.md)，其中包含接受邀请、环境准备、分支与 PR、签名发版以及可直接复制给 AI 的提示词。
+
 - 包名：`cn.edu.traveljournal`；最低 Android 8.0/API 26，目标 API 35。
 - Kotlin、Jetpack Compose Material3、SQLite、本机照片目录、Android Keystore。
 - 源码在 `app/src/main/java/cn/edu/traveljournal/`，地图网页资源在 `app/src/main/assets/map/`；位置以 WGS84 经纬度保存在本机 JSON 记录里。
