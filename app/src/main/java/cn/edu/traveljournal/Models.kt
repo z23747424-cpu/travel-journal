@@ -20,6 +20,9 @@ data class Journal(
     val mapSticker: String? = null,
     val mapStickerSize: Int = 32,
     val visited: Boolean = true,
+    val mapCityCode: String? = null,
+    val mapFillColor: String = "#A9BFAE",
+    val mapFillMode: String = "color",
 )
 
 data class Destination(

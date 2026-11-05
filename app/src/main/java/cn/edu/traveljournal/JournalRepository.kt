@@ -305,6 +305,9 @@ internal fun validateJournal(j: Journal, draft: Boolean = false) {
     require(j.latitude == null || validCoordinates(j.latitude, j.longitude!!)) { "地图经纬度超出有效范围" }
     require(j.mapSticker==null || j.mapSticker in j.photos) { "地图插画必须来自这篇手账的图片" }
     require(j.mapStickerSize in 24..144) { "地图插画大小无效" }
+    require(j.mapCityCode==null || j.mapCityCode.matches(Regex("[A-Za-z0-9_-]{1,24}"))) { "地图城市代码无效" }
+    require(j.mapFillColor.matches(Regex("#[0-9a-fA-F]{6}"))) { "城市颜色请使用 #RRGGBB 格式" }
+    require(j.mapFillMode in setOf("color","photos")) { "城市填充方式无效" }
     if (!draft) try { LocalDate.parse(j.date) } catch (_: Exception) { throw IllegalArgumentException("日期请使用 yyyy-MM-dd 格式") }
 }
 

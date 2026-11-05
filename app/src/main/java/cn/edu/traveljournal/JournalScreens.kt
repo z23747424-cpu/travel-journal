@@ -152,15 +152,16 @@ import kotlin.math.roundToInt
         item { OutlinedTextField(draft.place,{onChange(draft.copy(place=it))},label={Text("地点（可选）")},modifier=Modifier.fillMaxWidth(),singleLine=true) }
         item { Row(horizontalArrangement=Arrangement.spacedBy(10.dp)) {
             FilterChip(selected=draft.visited,onClick={onChange(draft.copy(visited=true))},label={Text("去过 · 点亮地图")})
-            FilterChip(selected=!draft.visited,onClick={onChange(draft.copy(visited=false))},label={Text("未去过 · 暗色")})
+            FilterChip(selected=!draft.visited,onClick={onChange(draft.copy(visited=false))},label={Text("想去 · 插旗")})
         } }
         item { Column {
             draft.mapPoint()?.let{Text("已标地图位置 · ${it.label()}",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
             Row {
                 TextButton(onClick={mapPicker=true},enabled=!saving&&!importing){Icon(Icons.Outlined.Place,null);Spacer(Modifier.width(6.dp));Text(if(draft.mapPoint()==null)"在地图选点" else "更改地图位置")}
-                if(draft.mapPoint()!=null)TextButton(onClick={onChange(draft.copy(latitude=null,longitude=null))},enabled=!saving&&!importing){Text("移除标注")}
+                if(draft.mapPoint()!=null)TextButton(onClick={onChange(draft.copy(latitude=null,longitude=null,mapCityCode=null))},enabled=!saving&&!importing){Text("移除标注")}
             }
         } }
+        if(draft.visited) item { MapStyleControls(draft.mapFillColor,draft.mapFillMode,draft.photos.isNotEmpty(),{onChange(draft.copy(mapFillColor=it))},{onChange(draft.copy(mapFillMode=it))}) }
         item { Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
             Text("旅途照片  ${draft.photos.size}/12",style=MaterialTheme.typography.titleMedium)
             TextButton(onClick={picker.launch(arrayOf("image/*"))},enabled=!importing&&draft.photos.size<12){Icon(Icons.Outlined.AddPhotoAlternate,null);Spacer(Modifier.width(6.dp));Text(if(importing)"导入中" else "添加照片")}
@@ -207,7 +208,7 @@ import kotlin.math.roundToInt
             Text("生成的标签和文字由你确认后使用。草稿会在本机暂存。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         } }
     }
-    if(mapPicker)MapLocationPicker(latestDraft.mapPoint(),latestDraft.place,onDismiss={mapPicker=false},onChoose={point,name->onChange(latestDraft.copy(place=name,latitude=point.latitude,longitude=point.longitude));mapPicker=false})
+    if(mapPicker)MapLocationPicker(latestDraft.mapPoint(),latestDraft.place,onDismiss={mapPicker=false},onChoose={point,name->onChange(latestDraft.copy(place=name,latitude=point.latitude,longitude=point.longitude,mapCityCode=null));mapPicker=false})
     if(suggestion!=null) AlertDialog(onDismissRequest={suggestion=null},title={Text("精灵的整理建议")},text={Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {
         OutlinedTextField(suggestedTitle,{suggestedTitle=it},label={Text("建议标题")})
         OutlinedTextField(suggestedTags,{suggestedTags=it},label={Text("候选标签")})

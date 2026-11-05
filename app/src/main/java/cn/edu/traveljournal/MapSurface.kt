@@ -1,33 +1,21 @@
 package cn.edu.traveljournal
 
-import android.annotation.SuppressLint
-import android.content.Intent
-import android.graphics.Bitmap
-import android.net.Uri
+import android.graphics.BitmapFactory
 import android.webkit.JavascriptInterface
-import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import kotlinx.coroutines.delay
-import org.json.JSONObject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
-private const val MAP_HOST = "appassets.androidplatform.net"
-private const val MAP_URL = "https://$MAP_HOST/assets/map/index.html"
-
-/** Bridge exists only on bundled, HTTPS-origin content; all other main-frame navigation is blocked. */
+/** Kept for compatibility with old bridge tests; native map never creates a WebView. */
 internal class MapBridge(
     private val dispatch: (() -> Unit) -> Unit,
     private val onReady: () -> Unit,
@@ -37,103 +25,71 @@ internal class MapBridge(
     private val onMove: (String,MapPoint) -> Unit = {_,_->},
 ) {
     @JavascriptInterface fun ready() = dispatch(onReady)
-    @JavascriptInterface fun selectPoint(latitude: Double, longitude: Double) {
-        if (validCoordinates(latitude, longitude)) dispatch { onPoint(MapPoint(latitude, longitude)) }
-    }
+    @JavascriptInterface fun selectPoint(latitude: Double, longitude: Double) { if (validCoordinates(latitude, longitude)) dispatch { onPoint(MapPoint(latitude, longitude)) } }
     @JavascriptInterface fun openNotes(ids: String) { if (ids.length <= 256_000) dispatch { onNotes(ids) } }
-    @JavascriptInterface fun cameraChanged(latitude: Double, longitude: Double, zoom: Double) {
-        if (validCoordinates(latitude, longitude) && zoom.isFinite() && zoom in 2.0..19.0) dispatch { onCamera(MapPoint(latitude, longitude), zoom) }
-    }
-    @JavascriptInterface fun moveNote(id:String,latitude:Double,longitude:Double) {
-        if(id.length in 1..128&&validCoordinates(latitude,longitude))dispatch{onMove(id,MapPoint(latitude,longitude))}
-    }
+    @JavascriptInterface fun cameraChanged(latitude: Double, longitude: Double, zoom: Double) { if (validCoordinates(latitude, longitude) && zoom.isFinite() && zoom in 2.0..19.0) dispatch { onCamera(MapPoint(latitude, longitude), zoom) } }
+    @JavascriptInterface fun moveNote(id:String,latitude:Double,longitude:Double) { if(id.length in 1..128&&validCoordinates(latitude,longitude))dispatch{onMove(id,MapPoint(latitude,longitude))} }
 }
 
-@SuppressLint("SetJavaScriptEnabled") // Only allowlisted bundled resources can execute code.
+private data class NativeMapData(val styles:Map<String,CityStyle>,val markers:List<MapMarker>)
+
 @Composable internal fun MapSurface(
     journals: List<Journal>, modifier: Modifier = Modifier, initialPoint: MapPoint? = null, initialZoom: Double = 13.0,
     onPoint: (MapPoint) -> Unit, onNotes: (String) -> Unit = {}, onCamera: (MapPoint, Double) -> Unit = { _, _ -> },
     chooseCenter: Boolean = false,
     onMove:(String,MapPoint)->Unit={_,_->},redrawKey:Int=0,
+    repo:JournalRepository?=null,controller:NativeMapController?=null,onAtlasReady:(CityAtlas)->Unit={},
 ) {
-    val context = LocalContext.current
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val pointCallback by rememberUpdatedState(onPoint)
-    val notesCallback by rememberUpdatedState(onNotes)
-    val cameraCallback by rememberUpdatedState(onCamera)
-    val moveCallback by rememberUpdatedState(onMove)
-    val data by rememberUpdatedState(mapNotesJson(journals))
-    var ready by remember { mutableStateOf(false) }
-    var pageError by remember { mutableStateOf(false) }
-    var reload by remember { mutableIntStateOf(0) }
-    val webView = remember {
-        WebView(context).apply {
-            setBackgroundColor(android.graphics.Color.rgb(231,236,229))
-            settings.javaScriptEnabled = true
-            settings.allowFileAccess = false
-            settings.allowContentAccess = false
-            settings.domStorageEnabled = false
-            settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
-            settings.cacheMode = WebSettings.LOAD_DEFAULT
-            settings.userAgentString += " TravelJournal/1.2.0 (+https://github.com/z23747424-cpu/travel-journal)"
-            addJavascriptInterface(MapBridge(
-                dispatch = { action -> post { action() } },
-                onReady = { ready = true; pageError = false },
-                onPoint = { pointCallback(it) }, onNotes = { notesCallback(it) }, onCamera = { p,z -> cameraCallback(p,z) },
-                onMove={id,p->moveCallback(id,p)},
-            ), "AndroidMap")
-            webViewClient = object : WebViewClient() {
-                private val resources=LocalMapResources(context)
-                override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
-                    return resources.intercept(request.url,request.method,request.isForMainFrame)
-                }
-                override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                    if (request.url.toString() == MAP_URL) return false
-                    if (request.hasGesture() && request.url.scheme == "https" && request.url.host in setOf("www.openstreetmap.org", "leafletjs.com","datav.aliyun.com")) {
-                        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, request.url)) }
-                    }
-                    return true
-                }
-                override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) { ready = false }
-                override fun onReceivedError(view: WebView, request: WebResourceRequest, error: android.webkit.WebResourceError) {
-                    if (request.isForMainFrame) pageError = true
-                }
+    val context=LocalContext.current
+    val localController=remember { NativeMapController() }
+    val activeController=controller ?: localController
+    val readyCallback by rememberUpdatedState(onAtlasReady)
+    var atlas by remember { mutableStateOf<CityAtlas?>(null) }
+    var data by remember { mutableStateOf(NativeMapData(emptyMap(),emptyList())) }
+    var loadError by remember { mutableStateOf(false) }
+    var loadAttempt by remember { mutableIntStateOf(0) }
+    var viewportRevision by remember { mutableIntStateOf(0) }
+    LaunchedEffect(context,loadAttempt) {
+        loadError=false
+        val loaded=withContext(Dispatchers.IO) { runCatching { CityAtlas.load(context) }.getOrNull() }
+        atlas=loaded;loadError=loaded==null
+        loaded?.let { readyCallback(it) }
+    }
+    LaunchedEffect(atlas,journals,repo,redrawKey,viewportRevision) {
+        val a=atlas ?: return@LaunchedEffect
+        val view=activeController.view
+        val visibleCities=a.cities.filter { view?.visible(it.shape) != false }.map { it.code }.toSet()
+        val visibleNotes=journals.filter { it.mapPoint()?.let { p -> view?.visible(p) != false } == true }.map { it.id }.toSet()
+        data=withContext(Dispatchers.IO) {
+            val bitmaps=mutableMapOf<String,android.graphics.Bitmap?>()
+            fun bitmap(name:String):android.graphics.Bitmap? {
+                if(name !in bitmaps && bitmaps.size<64) bitmaps[name]=runCatching {
+                    val bytes=repo?.photoFile(name)?.let(::mapThumbnail) ?: return@runCatching null
+                    BitmapFactory.decodeByteArray(bytes,0,bytes.size)
+                }.getOrNull()
+                return bitmaps[name]
             }
-            loadUrl(MAP_URL)
+            val located=journals.mapNotNull { j -> j.mapPoint()?.let { j to it } }
+            val byCity=a.visitedJournalsByCity(journals)
+            val styles=byCity.mapValues { (code,notes) ->
+                val latest=notes.maxBy { it.updatedAt }
+                CityStyle(latest,if(code in visibleCities && latest.mapFillMode=="photos") notes.sortedByDescending { it.updatedAt }.flatMap { it.photos }.distinct().take(4).mapNotNull(::bitmap) else emptyList())
+            }
+            val markers=located.map { (j,_) -> MapMarker(j,j.mapSticker?.takeIf { j.id in visibleNotes && it in j.photos }?.let(::bitmap)) }
+            NativeMapData(styles,markers)
         }
     }
-    DisposableEffect(webView, lifecycle) {
-        val observer = LifecycleEventObserver { _, event -> when (event) {
-            Lifecycle.Event.ON_RESUME -> webView.onResume()
-            Lifecycle.Event.ON_PAUSE -> webView.onPause()
-            else -> Unit
-        } }
-        lifecycle.addObserver(observer)
-        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) webView.onResume()
-        onDispose {
-            lifecycle.removeObserver(observer)
-            webView.stopLoading(); webView.removeJavascriptInterface("AndroidMap"); webView.onPause(); webView.destroy()
-        }
-    }
-    LaunchedEffect(ready) {
-        if (ready) {
-            val config = JSONObject().put("latitude", initialPoint?.latitude ?: JSONObject.NULL)
-                .put("longitude", initialPoint?.longitude ?: JSONObject.NULL).put("zoom", initialZoom)
-            webView.evaluateJavascript("window.TravelMap.configure($config);window.TravelMap.setNotes($data);", null)
-        }
-    }
-    LaunchedEffect(data, ready,redrawKey) { if (ready) webView.evaluateJavascript("window.TravelMap.setNotes($data);", null) }
-    LaunchedEffect(ready,reload) { if(!ready){delay(12_000);pageError=true} }
+    DisposableEffect(activeController) { onDispose { activeController.view=null } }
     Column(modifier) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
-            AndroidView(factory = { webView }, modifier = Modifier.fillMaxSize())
-            if (!ready) Surface(Modifier.align(Alignment.Center), shape=MaterialTheme.shapes.medium) {
-                Column(Modifier.padding(18.dp),horizontalAlignment=Alignment.CenterHorizontally) {
-                    if (!pageError) { Text("正在打开旅行地图…") }
-                    else { Text("地图暂时无法打开"); TextButton(onClick={pageError=false;reload++;webView.loadUrl(MAP_URL)}){Text("重新打开地图")} }
-                }
+            AndroidView(factory={ ctx -> NativeTravelMapView(ctx).apply { initialize(initialPoint,initialZoom);activeController.view=this } },modifier=Modifier.fillMaxSize(),update={ v ->
+                activeController.view=v;v.atlas=atlas;v.styles=data.styles;v.markers=data.markers;v.onPoint=onPoint;v.onNotes=onNotes;v.onCamera={ p,z -> viewportRevision++;onCamera(p,z) };v.onViewport={ viewportRevision++ };v.onMove=onMove;v.invalidate()
+            })
+            if(atlas==null) Column(Modifier.align(Alignment.Center).padding(16.dp),horizontalAlignment=Alignment.CenterHorizontally) {
+                if(loadError) { Text("离线地图数据加载失败");TextButton(onClick={loadAttempt++}) { Text("重试") } }
+                else { CircularProgressIndicator();Text("正在加载离线地图…",Modifier.padding(top=8.dp)) }
             }
         }
-        if (chooseCenter) TextButton(onClick={webView.evaluateJavascript("window.TravelMap.chooseCenter();",null)},enabled=ready,modifier=Modifier.fillMaxWidth()) { Text("选择地图中心的位置") }
+        if(chooseCenter) TextButton(onClick={activeController.chooseCenter()},enabled=atlas!=null,modifier=Modifier.fillMaxWidth()) { Text("选择地图中心的位置") }
     }
 }

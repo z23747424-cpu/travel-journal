@@ -114,6 +114,8 @@ internal fun journalJson(j: Journal): JSONObject = JSONObject()
     .put("latitude", j.latitude ?: JSONObject.NULL).put("longitude", j.longitude ?: JSONObject.NULL)
     .put("mapSticker", j.mapSticker ?: JSONObject.NULL).put("mapStickerSize", j.mapStickerSize)
     .put("visited",j.visited)
+    .put("mapCityCode",j.mapCityCode ?: JSONObject.NULL)
+    .put("mapFillColor",j.mapFillColor).put("mapFillMode",j.mapFillMode)
 
 internal fun journalFromJson(j: JSONObject): Journal = Journal(
     id = strictString(j, "id"), title = strictString(j, "title"), date = strictString(j, "date"),
@@ -122,6 +124,9 @@ internal fun journalFromJson(j: JSONObject): Journal = Journal(
     latitude = nullableDouble(j, "latitude"), longitude = nullableDouble(j, "longitude"),
     mapSticker = nullableString(j, "mapSticker"), mapStickerSize = optionalInt(j, "mapStickerSize", 32),
     visited=optionalBoolean(j,"visited",!strictString(j,"id").startsWith("demo-journal-")),
+    mapCityCode=nullableString(j,"mapCityCode"),
+    mapFillColor=strictString(j,"mapFillColor","#A9BFAE"),
+    mapFillMode=strictString(j,"mapFillMode","color"),
 )
 
 internal fun destinationJson(d: Destination): JSONObject = JSONObject()
