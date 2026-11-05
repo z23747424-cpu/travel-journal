@@ -54,6 +54,7 @@ const tile='<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><re
     const page=await browser.newPage({viewport:{width:390,height:720}});
     await page.route('https://tile.openstreetmap.org/**',route=>route.abort());
     await page.goto(target);
+    await page.locator('#street').click();
     await page.locator('#tile-status').waitFor({state:'visible'});
     await page.locator('#retry').click();
     report.push({tileFailureRecoveryControl:true,publicTileRequests:0});

@@ -112,12 +112,16 @@ internal fun journalJson(j: Journal): JSONObject = JSONObject()
     .put("photos", JSONArray(j.photos)).put("tags", JSONArray(j.tags)).put("photoDescription", j.photoDescription)
     .put("createdAt", j.createdAt).put("updatedAt", j.updatedAt).put("wishId", j.wishId ?: JSONObject.NULL)
     .put("latitude", j.latitude ?: JSONObject.NULL).put("longitude", j.longitude ?: JSONObject.NULL)
+    .put("mapSticker", j.mapSticker ?: JSONObject.NULL).put("mapStickerSize", j.mapStickerSize)
+    .put("visited",j.visited)
 
 internal fun journalFromJson(j: JSONObject): Journal = Journal(
     id = strictString(j, "id"), title = strictString(j, "title"), date = strictString(j, "date"),
     place = strictString(j, "place", ""), body = strictString(j, "body", ""), photos = stringList(j, "photos"), tags = stringList(j, "tags"),
     photoDescription = strictString(j, "photoDescription", ""), createdAt = strictLong(j, "createdAt"), updatedAt = strictLong(j, "updatedAt"), wishId = nullableString(j, "wishId"),
     latitude = nullableDouble(j, "latitude"), longitude = nullableDouble(j, "longitude"),
+    mapSticker = nullableString(j, "mapSticker"), mapStickerSize = optionalInt(j, "mapStickerSize", 32),
+    visited=optionalBoolean(j,"visited",!strictString(j,"id").startsWith("demo-journal-")),
 )
 
 internal fun destinationJson(d: Destination): JSONObject = JSONObject()
@@ -159,6 +163,20 @@ internal fun stringList(json: JSONObject, key: String): List<String> {
 }
 
 private fun nullableString(json: JSONObject, key: String): String? = if (!json.has(key) || json.isNull(key)) null else strictString(json, key)
+
+private fun optionalInt(json:JSONObject,key:String,default:Int):Int {
+    if(!json.has(key))return default
+    val value=json.get(key)
+    require(value is Number && value.toDouble()==value.toInt().toDouble()){ "字段 $key 必须是整数" }
+    return value.toInt()
+}
+
+private fun optionalBoolean(json:JSONObject,key:String,default:Boolean):Boolean {
+    if(!json.has(key))return default
+    val value=json.get(key)
+    require(value is Boolean){"字段 $key 必须是是/否"}
+    return value
+}
 
 private fun nullableDouble(json: JSONObject, key: String): Double? {
     if (!json.has(key) || json.isNull(key)) return null

@@ -60,6 +60,12 @@ class JournalRepository(context: Context) : AutoCloseable {
         cleanupPhotos(old.photos)
     }
 
+    @Synchronized fun moveMapSticker(id:String,point:MapPoint) {
+        val entry=journals().find{it.id==id}?:throw IllegalArgumentException("这篇笔记已不存在")
+        require(entry.mapSticker!=null){"这条记录没有插画标记"}
+        saveJournal(entry.copy(latitude=point.latitude,longitude=point.longitude,updatedAt=System.currentTimeMillis()))
+    }
+
     @Synchronized fun wishes(): List<Wish> = readRows("wishes", ::wishFromJson).sortedByDescending { it.createdAt }
 
     @Synchronized fun saveWish(w: Wish) {
@@ -191,7 +197,7 @@ class JournalRepository(context: Context) : AutoCloseable {
             }
             transaction {
                 entries.forEach { journal ->
-                    val imported = journal.copy(id = journalMap.getValue(journal.id), photos = journal.photos.map(photoMap::getValue), wishId = journal.wishId?.let(wishMap::getValue))
+                    val imported = journal.copy(id = journalMap.getValue(journal.id), photos = journal.photos.map(photoMap::getValue), wishId = journal.wishId?.let(wishMap::getValue),mapSticker=journal.mapSticker?.let(photoMap::getValue))
                     put("journals", imported.id, journalJson(imported))
                 }
                 wishes.forEach { wish ->
@@ -297,6 +303,8 @@ internal fun validateJournal(j: Journal, draft: Boolean = false) {
     require(j.wishId == null || j.wishId.isNotBlank() && j.wishId.length <= 128) { "收藏关联无效" }
     require((j.latitude == null) == (j.longitude == null)) { "地图位置需要完整的经纬度" }
     require(j.latitude == null || validCoordinates(j.latitude, j.longitude!!)) { "地图经纬度超出有效范围" }
+    require(j.mapSticker==null || j.mapSticker in j.photos) { "地图插画必须来自这篇手账的图片" }
+    require(j.mapStickerSize in 24..144) { "地图插画大小无效" }
     if (!draft) try { LocalDate.parse(j.date) } catch (_: Exception) { throw IllegalArgumentException("日期请使用 yyyy-MM-dd 格式") }
 }
 

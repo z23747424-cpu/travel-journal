@@ -36,4 +36,18 @@ class MapLogicTest {
         assertEquals(1,selected.size)
         assertEquals(listOf(12.0),cameras)
     }
+    @Test fun artworkPayloadUsesOnlyLocalPhotosAndValidDragCallbacks() {
+        val entry=Journal(id="art",title="插画",latitude=30.0,longitude=120.0,photos=listOf("art.png"),mapSticker="art.png",mapStickerSize=96)
+        val json=JSONArray(mapNotesJson(listOf(entry))).getJSONObject(0)
+        assertEquals("/photos/art.png",json.getString("illustration"))
+        assertEquals(96,json.getInt("illustrationSize"))
+        assertTrue(json.getBoolean("visited"))
+        assertFalse(JSONArray(mapNotesJson(listOf(entry.copy(visited=false)))).getJSONObject(0).getBoolean("visited"))
+        val moved=mutableListOf<String>()
+        val bridge=MapBridge({it()},{},{},{},{_,_->},{id,_->moved.add(id)})
+        bridge.moveNote("art",Double.NaN,120.0)
+        bridge.moveNote("",30.0,120.0)
+        bridge.moveNote("art",30.0,120.0)
+        assertEquals(listOf("art"),moved)
+    }
 }

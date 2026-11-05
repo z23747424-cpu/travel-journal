@@ -176,7 +176,7 @@ class AiClient internal constructor(private val transport: AiTransport) {
     }
 
     suspend fun recall(config: AiConfig, journal: Journal): String = call(config,
-        "根据这篇已保存手账，写一段100字以内、温柔简短的回顾候选。不虚构文字未提供的行程、天气、感受和人物身份；不要自行修改记录。仅返回中文回顾正文。",
+        "根据这篇已保存手账，写一段100字以内、温柔简短的回顾候选。visited=false 时仅整理旅行想法，不把计划写成已经发生的经历。不虚构文字未提供的行程、天气、感受和人物身份；不要自行修改记录。仅返回中文回顾正文。",
         JSONObject().put("journal", compactJournal(journal))).trim().take(1200)
 
     internal suspend fun call(config: AiConfig, instruction: String, payload: Any): String {
@@ -203,7 +203,7 @@ private const val SYSTEM_PROMPT = "你是管理旅行手账的账本精灵，温
 private const val SEARCH_PROMPT = "根据用户查询，对提供的真实手账按语义相关性排序，只返回有可信内容支持的记录ID及简短理由；不因缺少相同关键词而忽略同义表达。没有相关记录时返回空items。不臆造回忆或ID。返回JSON：{\"items\":[{\"id\":\"真实记录ID\",\"reason\":\"记录内支持匹配的内容\"}]}。"
 
 private fun compactJournal(j: Journal): JSONObject = JSONObject().put("id", j.id).put("title", j.title.take(200))
-    .put("date", j.date.take(20)).put("place", j.place.take(300)).put("tags", JSONArray(j.tags.take(24).map { it.take(80) }))
+    .put("date", j.date.take(20)).put("place", j.place.take(300)).put("tags", JSONArray(j.tags.take(24).map { it.take(80) })).put("visited",j.visited)
     .put("photoDescription", j.photoDescription.take(1200)).put("body", j.body.take(800))
 
 /** Re-encoding pixels creates a smaller JPEG with no EXIF/location metadata. Originals stay local. */

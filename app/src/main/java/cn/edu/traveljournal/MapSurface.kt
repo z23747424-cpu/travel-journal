@@ -23,11 +23,9 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.delay
 import org.json.JSONObject
-import java.io.ByteArrayInputStream
 
 private const val MAP_HOST = "appassets.androidplatform.net"
 private const val MAP_URL = "https://$MAP_HOST/assets/map/index.html"
-private val MAP_FILES = setOf("index.html", "map.js", "map.css", "vendor/leaflet.js", "vendor/leaflet.css")
 
 /** Bridge exists only on bundled, HTTPS-origin content; all other main-frame navigation is blocked. */
 internal class MapBridge(
@@ -36,6 +34,7 @@ internal class MapBridge(
     private val onPoint: (MapPoint) -> Unit,
     private val onNotes: (String) -> Unit,
     private val onCamera: (MapPoint, Double) -> Unit,
+    private val onMove: (String,MapPoint) -> Unit = {_,_->},
 ) {
     @JavascriptInterface fun ready() = dispatch(onReady)
     @JavascriptInterface fun selectPoint(latitude: Double, longitude: Double) {
@@ -45,19 +44,24 @@ internal class MapBridge(
     @JavascriptInterface fun cameraChanged(latitude: Double, longitude: Double, zoom: Double) {
         if (validCoordinates(latitude, longitude) && zoom.isFinite() && zoom in 2.0..19.0) dispatch { onCamera(MapPoint(latitude, longitude), zoom) }
     }
+    @JavascriptInterface fun moveNote(id:String,latitude:Double,longitude:Double) {
+        if(id.length in 1..128&&validCoordinates(latitude,longitude))dispatch{onMove(id,MapPoint(latitude,longitude))}
+    }
 }
 
-@SuppressLint("SetJavaScriptEnabled") // Only the five allowlisted bundled resources can execute code.
+@SuppressLint("SetJavaScriptEnabled") // Only allowlisted bundled resources can execute code.
 @Composable internal fun MapSurface(
     journals: List<Journal>, modifier: Modifier = Modifier, initialPoint: MapPoint? = null, initialZoom: Double = 13.0,
     onPoint: (MapPoint) -> Unit, onNotes: (String) -> Unit = {}, onCamera: (MapPoint, Double) -> Unit = { _, _ -> },
     chooseCenter: Boolean = false,
+    onMove:(String,MapPoint)->Unit={_,_->},redrawKey:Int=0,
 ) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val pointCallback by rememberUpdatedState(onPoint)
     val notesCallback by rememberUpdatedState(onNotes)
     val cameraCallback by rememberUpdatedState(onCamera)
+    val moveCallback by rememberUpdatedState(onMove)
     val data by rememberUpdatedState(mapNotesJson(journals))
     var ready by remember { mutableStateOf(false) }
     var pageError by remember { mutableStateOf(false) }
@@ -71,27 +75,21 @@ internal class MapBridge(
             settings.domStorageEnabled = false
             settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             settings.cacheMode = WebSettings.LOAD_DEFAULT
-            settings.userAgentString += " TravelJournal/1.1.0 (+https://github.com/z23747424-cpu/travel-journal)"
+            settings.userAgentString += " TravelJournal/1.2.0 (+https://github.com/z23747424-cpu/travel-journal)"
             addJavascriptInterface(MapBridge(
                 dispatch = { action -> post { action() } },
                 onReady = { ready = true; pageError = false },
                 onPoint = { pointCallback(it) }, onNotes = { notesCallback(it) }, onCamera = { p,z -> cameraCallback(p,z) },
+                onMove={id,p->moveCallback(id,p)},
             ), "AndroidMap")
             webViewClient = object : WebViewClient() {
+                private val resources=LocalMapResources(context)
                 override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
-                    val uri = request.url
-                    if (uri.scheme == "https" && uri.host == MAP_HOST) {
-                        val name = uri.path.orEmpty().removePrefix("/assets/map/")
-                        if (name in MAP_FILES && request.method == "GET") {
-                            val type = when { name.endsWith(".js") -> "application/javascript"; name.endsWith(".css") -> "text/css"; else -> "text/html" }
-                            return WebResourceResponse(type, "UTF-8", context.assets.open("map/$name"))
-                        }
-                    } else if (uri.scheme == "https" && uri.host == "tile.openstreetmap.org" && !request.isForMainFrame && request.method == "GET") return null
-                    return WebResourceResponse("text/plain", "UTF-8", 403, "Forbidden", emptyMap(), ByteArrayInputStream(ByteArray(0)))
+                    return resources.intercept(request.url,request.method,request.isForMainFrame)
                 }
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                     if (request.url.toString() == MAP_URL) return false
-                    if (request.hasGesture() && request.url.scheme == "https" && request.url.host in setOf("www.openstreetmap.org", "leafletjs.com")) {
+                    if (request.hasGesture() && request.url.scheme == "https" && request.url.host in setOf("www.openstreetmap.org", "leafletjs.com","datav.aliyun.com")) {
                         runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, request.url)) }
                     }
                     return true
@@ -124,7 +122,7 @@ internal class MapBridge(
             webView.evaluateJavascript("window.TravelMap.configure($config);window.TravelMap.setNotes($data);", null)
         }
     }
-    LaunchedEffect(data, ready) { if (ready) webView.evaluateJavascript("window.TravelMap.setNotes($data);", null) }
+    LaunchedEffect(data, ready,redrawKey) { if (ready) webView.evaluateJavascript("window.TravelMap.setNotes($data);", null) }
     LaunchedEffect(ready,reload) { if(!ready){delay(12_000);pageError=true} }
     Column(modifier) {
         Box(Modifier.weight(1f).fillMaxWidth()) {

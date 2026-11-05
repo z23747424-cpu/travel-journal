@@ -18,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
 import org.json.JSONObject
 
@@ -50,6 +52,8 @@ class MainActivity:ComponentActivity(){
     var parkedDraft by remember{mutableStateOf<Journal?>(null)}
     var leave by remember{mutableStateOf(false)}
     var saving by remember{mutableStateOf(false)}
+    var mapRevision by remember{mutableIntStateOf(0)}
+    val mapMoves=remember{Mutex()}
     val stateHolder=rememberSaveableStateHolder()
     fun message(s:String){scope.launch{snackbar.showSnackbar(s)}}
     suspend fun refresh(){
@@ -103,15 +107,15 @@ class MainActivity:ComponentActivity(){
                         loading->Column(Modifier.align(Alignment.Center),horizontalAlignment=Alignment.CenterHorizontally){CircularProgressIndicator();Spacer(Modifier.height(16.dp));Text("正在翻开你的旅行手账…")}
                         loadError.isNotBlank()->Column(Modifier.padding(24.dp)){Message(loadError,true);Button(onClick={scope.launch{try{refresh();loadError=""}catch(e:Exception){message(e.message?:"载入失败")}}}){Text("重试载入")}}
                         draft!=null->JournalEditor(draft!!,repo,{if(!saving)draft=it},::save,{if(!saving)leave=true},::message,saving)
-                        detail!=null->JournalDetail(detail,repo,config.spiritName,onEdit={create(detail)},onDelete={scope.launch{try{withContext(Dispatchers.IO){repo.deleteJournal(detail.id)};refresh();detailId=null;message("手账已删除")}catch(e:Exception){message(e.message?:"删除失败")}}},onBack={detailId=null},onError=::message,onNewHere={create(Journal(place=detail.place,latitude=detail.latitude,longitude=detail.longitude))})
+                        detail!=null->JournalDetail(detail,repo,config.spiritName,onEdit={create(detail)},onDelete={scope.launch{try{withContext(Dispatchers.IO){repo.deleteJournal(detail.id)};refresh();detailId=null;message("手账已删除")}catch(e:Exception){message(e.message?:"删除失败")}}},onBack={detailId=null},onError=::message,onNewHere={create(Journal(place=detail.place,latitude=detail.latitude,longitude=detail.longitude,visited=detail.visited))})
                         archive&&tab==0->Column(Modifier.fillMaxSize()) {
                             Row(Modifier.fillMaxWidth().padding(horizontal=12.dp),verticalAlignment=Alignment.CenterVertically){TextButton(onClick={archive=false}){Text("返回地图")};Spacer(Modifier.weight(1f));TextButton(onClick={create()}){Text("新建手账")}}
                             Box(Modifier.weight(1f)){JournalHome(journals,repo,{create()},{detailId=it.id},onDemo={scope.launch{try{withContext(Dispatchers.IO){loadDemoJournals(context,repo)};refresh()}catch(e:Exception){message(e.message?:"示例载入失败")}}},onInspiration={archive=false;tab=2},hasDraft=parkedDraft!=null,onResume={recovered=parkedDraft})}
                         }
                         else->stateHolder.SaveableStateProvider(tab){when(tab){
-                            0->MapHome(journals,::create,{detailId=it.id},{archive=true},onDemo={scope.launch{try{withContext(Dispatchers.IO){loadDemoJournals(context,repo)};refresh();message("已添加3篇教学示例，地图坐标仅作演示")}catch(e:Exception){message(e.message?:"示例载入失败")}}},hasDraft=parkedDraft!=null,onResume={recovered=parkedDraft},onError=::message)
+                            0->MapHome(journals,repo,::create,{detailId=it.id},{archive=true},onDemo={scope.launch{try{withContext(Dispatchers.IO){loadDemoJournals(context,repo)};refresh();message("已添加3篇教学示例，地图坐标仅作演示")}catch(e:Exception){message(e.message?:"示例载入失败")}}},hasDraft=parkedDraft!=null,onResume={recovered=parkedDraft},onError=::message,mapRevision=mapRevision,onMoveRecord={id,p->scope.launch{mapMoves.withLock{try{withContext(Dispatchers.IO){repo.moveMapSticker(id,p)};refresh()}catch(e:CancellationException){throw e}catch(e:Exception){message(e.message?:"位置保存失败，请重新拖动")}finally{mapRevision++}}}})
                             1->SearchScreen(journals,repo,{detailId=it.id},{tab=3})
-                            2->InspirationScreen(wishes,repo,onSaveWish={w->scope.launch{try{withContext(Dispatchers.IO){repo.saveWish(w)};refresh();message("已保存到想去清单")}catch(e:Exception){message(e.message?:"收藏失败")}}},onDeleteWish={id->scope.launch{try{withContext(Dispatchers.IO){repo.deleteWish(id)};refresh();message("已移除收藏")}catch(e:Exception){message(e.message?:"移除失败")}}},onStart={wish->create(Journal(place=wish.destination.name,title="${wish.destination.name}旅行",wishId=wish.id))},onSettings={tab=3})
+                            2->InspirationScreen(wishes,repo,onSaveWish={w->scope.launch{try{withContext(Dispatchers.IO){repo.saveWish(w)};refresh();message("已保存到想去清单")}catch(e:Exception){message(e.message?:"收藏失败")}}},onDeleteWish={id->scope.launch{try{withContext(Dispatchers.IO){repo.deleteWish(id)};refresh();message("已移除收藏")}catch(e:Exception){message(e.message?:"移除失败")}}},onStart={wish->create(Journal(place=wish.destination.name,title="${wish.destination.name}旅行",wishId=wish.id,visited=false))},onSettings={tab=3})
                             3->SettingsScreen(config,repo,onSave={c->scope.launch{try{withContext(Dispatchers.IO){repo.saveConfig(c)};refresh();message("设置已保存")}catch(e:Exception){message(e.message?:"设置保存失败")}}},onImported={scope.launch{refresh()}},onMessage=::message)
                         }}
                     }

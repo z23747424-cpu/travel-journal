@@ -204,4 +204,62 @@ class JournalRepositoryTest {
         }
         assertTrue(repository.journals().isEmpty())
     }
+
+    @Test fun artworkBackupRemapsItsImageAndDragPersists() {
+        val source=File(context.cacheDir,"artwork.png")
+        source.outputStream().use{Bitmap.createBitmap(8,8,Bitmap.Config.ARGB_8888).compress(Bitmap.CompressFormat.PNG,100,it)}
+        val photo=repository.importPhoto(Uri.fromFile(source))
+        val entry=Journal(id="artwork",title="自己的插画",photos=listOf(photo),mapSticker=photo,mapStickerSize=96,latitude=30.2,longitude=118.1)
+        repository.saveJournal(entry)
+        repository.saveDraft(entry.copy(title="插画草稿"))
+        assertEquals(photo,repository.loadDraft()!!.mapSticker)
+        val archive=ByteArrayOutputStream();repository.exportBackup(archive)
+        repository.importBackup(ByteArrayInputStream(archive.toByteArray()))
+        val copies=repository.journals()
+        assertEquals(2,copies.size)
+        copies.forEach{assertEquals(it.photos.single(),it.mapSticker);assertTrue(repository.photoFile(it.mapSticker!!).isFile);assertEquals(96,it.mapStickerSize)}
+        assertNotEquals(copies[0].mapSticker,copies[1].mapSticker)
+        repository.moveMapSticker("artwork",MapPoint(35.0,113.0))
+        repository.close();repository=JournalRepository(context)
+        assertEquals(35.0,repository.journals().first{it.id=="artwork"}.latitude!!,0.00001)
+        assertEquals(30.2,repository.journals().first{it.id!="artwork"}.latitude!!,0.00001)
+    }
+
+    @Test fun missingArtworkAndInvalidSizeAreRejectedAndOldJsonDefaultsAreSafe() {
+        val entry=Journal(title="插画校验",body="原文")
+        assertThrows(IllegalArgumentException::class.java){repository.saveJournal(entry.copy(mapSticker="missing.png"))}
+        assertThrows(IllegalArgumentException::class.java){repository.saveJournal(entry.copy(mapStickerSize=10000))}
+        val old=journalJson(entry).apply{remove("mapSticker");remove("mapStickerSize")}
+        assertNull(journalFromJson(old).mapSticker)
+        assertEquals(32,journalFromJson(old).mapStickerSize)
+        old.put("mapStickerSize","72")
+        assertThrows(IllegalArgumentException::class.java){journalFromJson(old)}
+    }
+
+    @Test fun movingADeletedOrOrdinaryNoteCannotCreateAnArtwork() {
+        val entry=Journal(id="ordinary",title="普通笔记",body="正文")
+        repository.saveJournal(entry)
+        assertThrows(IllegalArgumentException::class.java){repository.moveMapSticker(entry.id,MapPoint(30.0,120.0))}
+        repository.deleteJournal(entry.id)
+        assertThrows(IllegalArgumentException::class.java){repository.moveMapSticker(entry.id,MapPoint(30.0,120.0))}
+        assertTrue(repository.journals().isEmpty())
+    }
+    @Test fun visitedAndPlannedStatesSurviveDraftAndBackup() {
+        repository.saveJournal(Journal(id="went",title="去过",body="记录",visited=true,latitude=30.2489,longitude=120.1481))
+        val planned=Journal(id="plan",title="想去",body="计划",visited=false,latitude=25.6892,longitude=100.1615)
+        repository.saveJournal(planned);repository.saveDraft(planned)
+        assertFalse(repository.loadDraft()!!.visited)
+        val archive=ByteArrayOutputStream();repository.exportBackup(archive)
+        repository.importBackup(ByteArrayInputStream(archive.toByteArray()))
+        assertEquals(2,repository.journals().count{it.visited})
+        assertEquals(2,repository.journals().count{!it.visited})
+    }
+    @Test fun legacyTripsDefaultToVisitedButTeachingRecordsDoNot() {
+        val old=journalJson(Journal(id="old-trip",title="旧记录",body="正文")).apply{remove("visited")}
+        assertTrue(journalFromJson(old).visited)
+        old.put("id","demo-journal-0")
+        assertFalse(journalFromJson(old).visited)
+        old.put("visited","true")
+        assertThrows(IllegalArgumentException::class.java){journalFromJson(old)}
+    }
 }

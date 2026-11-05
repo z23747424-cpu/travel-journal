@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.*
 import java.time.LocalDate
+import kotlin.math.roundToInt
 
 @Composable fun JournalHome(journals: List<Journal>, repo: JournalRepository, onNew: () -> Unit,
     onOpen: (Journal) -> Unit, onDemo: () -> Unit, onInspiration: () -> Unit,hasDraft:Boolean=false,onResume:()->Unit={}) {
@@ -76,7 +77,7 @@ import java.time.LocalDate
             Text(journal.title,style=MaterialTheme.typography.headlineLarge)
             Text("${journal.date}  ·  ${journal.place.ifBlank{"旅途中的一站"}}",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.primary)
             journal.mapPoint()?.let{point->Text("地图位置 · ${point.label()}",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant);if(onNewHere!=null)TextButton(onClick=onNewHere){Text("在这里再写一篇")}}
-            TagRow(journal.tags)
+            TagRow(listOf(if(journal.visited)"去过" else "未去过")+journal.tags)
             if(journal.body.isNotBlank()) Text(journal.body,style=MaterialTheme.typography.bodyLarge)
         } }
         items(journal.photos.drop(1)) { photo -> LocalPhoto(repo.photoFile(photo),"旅行照片",Modifier.fillMaxWidth().padding(horizontal=24.dp).height(280.dp).clickable{fullPhoto=photo}) }
@@ -149,6 +150,10 @@ import java.time.LocalDate
             }){Icon(Icons.Outlined.CalendarToday,null,Modifier.size(18.dp));Spacer(Modifier.width(8.dp));Text(draft.date)}
         } }
         item { OutlinedTextField(draft.place,{onChange(draft.copy(place=it))},label={Text("地点（可选）")},modifier=Modifier.fillMaxWidth(),singleLine=true) }
+        item { Row(horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+            FilterChip(selected=draft.visited,onClick={onChange(draft.copy(visited=true))},label={Text("去过 · 点亮地图")})
+            FilterChip(selected=!draft.visited,onClick={onChange(draft.copy(visited=false))},label={Text("未去过 · 暗色")})
+        } }
         item { Column {
             draft.mapPoint()?.let{Text("已标地图位置 · ${it.label()}",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
             Row {
@@ -175,7 +180,14 @@ import java.time.LocalDate
                 IconButton(enabled=draft.photos.indexOf(photo)>0,onClick={
                     val p=draft.photos.toMutableList();val i=p.indexOf(photo);if(i>0){p[i]=p[i-1];p[i-1]=photo;onChange(draft.copy(photos=p))}
                 }){Icon(Icons.Outlined.ArrowUpward,"前移照片",Modifier.size(20.dp))}
-                IconButton(onClick={selectedForAi=selectedForAi-photo;onChange(draft.copy(photos=draft.photos-photo))}){Icon(Icons.Outlined.Close,"移除照片")}
+                IconButton(onClick={selectedForAi=selectedForAi-photo;onChange(draft.copy(photos=draft.photos-photo,mapSticker=draft.mapSticker.takeUnless{it==photo}))}){Icon(Icons.Outlined.Close,"移除照片")}
+            }
+            TextButton(onClick={onChange(draft.copy(mapSticker=if(draft.mapSticker==photo)null else photo))}){
+                Icon(if(draft.mapSticker==photo)Icons.Outlined.CheckCircle else Icons.Outlined.Place,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text(if(draft.mapSticker==photo)"取消这张地图插画" else "用这张图片作地图插画")
+            }
+            if(draft.mapSticker==photo)Column {
+                Text(if(draft.mapPoint()!=null)"插画大小 · 全国视野自动缩小，放大后显示设定尺寸" else "补充地图位置后，这张插画会显示在地图上",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                Slider(value=draft.mapStickerSize.coerceIn(24,96).toFloat(),onValueChange={onChange(draft.copy(mapStickerSize=it.roundToInt()))},valueRange=24f..96f,steps=8)
             }
         } }
         item { OutlinedTextField(draft.body,{onChange(draft.copy(body=it))},label={Text("这一路的故事")},placeholder={Text("天气、风景、一次偶遇，或者此刻的心情…")},modifier=Modifier.fillMaxWidth(),minLines=6,maxLines=18) }

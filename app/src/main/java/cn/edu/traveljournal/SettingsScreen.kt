@@ -80,7 +80,7 @@ import java.time.LocalDate
             OutlinedButton(onClick={importer.launch(arrayOf("application/zip","application/octet-stream"))},enabled=!archiveBusy){Text("导入备份")}
         }}
         if(archiveBusy)item{LinearProgressIndicator(Modifier.fillMaxWidth());Message("正在处理备份，请稍候…")}
-        item{HorizontalDivider();Spacer(Modifier.height(18.dp));Text("当前主题 · 杂志",style=MaterialTheme.typography.titleMedium);Message("从地图出发，用照片和文字留住当时的心情。");Text("旅页 1.1 · 地图旅行手账\nAI 提供建议，记录由你决定。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+        item{HorizontalDivider();Spacer(Modifier.height(18.dp));Text("当前主题 · 杂志",style=MaterialTheme.typography.titleMedium);Message("从地图出发，用照片和文字留住当时的心情。");Text("旅页 1.2 · 插画旅行地图\nAI 提供建议，记录由你决定。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
     }
     if(confirmClear)AlertDialog(onDismissRequest={confirmClear=false},title={Text("清除 AI 密钥？")},text={Text("本地手账和其他设置会保留。之后可重新填写密钥。")},confirmButton={TextButton(onClick={key="";onSave(current().copy(apiKey=""));confirmClear=false;result=""}){Text("清除")}},dismissButton={TextButton(onClick={confirmClear=false}){Text("取消")}})
     if(importUri!=null)AlertDialog(onDismissRequest={importUri=null},title={Text("导入手账备份？")},text={Text("会合并手账、照片与想去清单，同名标识将作为新记录导入。现有记录不会被覆盖。")},confirmButton={TextButton(onClick={

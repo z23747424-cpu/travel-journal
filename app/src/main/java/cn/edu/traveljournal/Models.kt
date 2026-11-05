@@ -17,6 +17,9 @@ data class Journal(
     val wishId: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
+    val mapSticker: String? = null,
+    val mapStickerSize: Int = 32,
+    val visited: Boolean = true,
 )
 
 data class Destination(

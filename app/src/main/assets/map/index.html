@@ -8,11 +8,13 @@
   <link rel="stylesheet" href="vendor/leaflet.css">
   <link rel="stylesheet" href="map.css">
   <script defer src="vendor/leaflet.js"></script>
+  <script defer src="china-boundaries.js"></script>
   <script defer src="map.js"></script>
 </head>
 <body>
   <main id="map" aria-label="旅行地图，点击地点开始记录"></main>
-  <div class="map-actions"><button id="china" type="button">回到中国</button><button id="footprints" type="button">全部足迹</button></div>
-  <div id="tile-status" class="tile-status" role="status" hidden>底图暂未载入。可重试，或从全部手账继续记录。<button id="retry" type="button">重试底图</button></div>
+  <div class="map-actions"><button id="china" type="button">中国全图</button><button id="footprints" type="button">全部足迹</button><button id="street" type="button" aria-pressed="false">街道底图</button></div>
+  <div class="map-legend" aria-label="去过的区域提亮，未去过的区域暗色"><span><i class="legend-visited"></i>去过</span><span><i class="legend-unvisited"></i>未去过</span></div>
+  <div id="tile-status" class="tile-status" role="status" hidden>街道底图暂未载入，完整中国地图仍可使用。<button id="retry" type="button">重试街道底图</button></div>
 </body>
 </html>

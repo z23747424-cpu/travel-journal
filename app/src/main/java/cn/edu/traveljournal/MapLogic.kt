@@ -16,7 +16,9 @@ internal fun Journal.mapPoint(): MapPoint? = if (latitude != null && longitude !
 
 internal fun mapNotesJson(journals: List<Journal>): String = JSONArray(journals.mapNotNull { journal ->
     journal.mapPoint()?.let { point -> JSONObject().put("id", journal.id).put("title", journal.title)
-        .put("place", journal.place).put("latitude", point.latitude).put("longitude", point.longitude) }
+        .put("place", journal.place).put("latitude", point.latitude).put("longitude", point.longitude)
+        .put("illustration",journal.mapSticker?.takeIf{it in journal.photos&&PHOTO_NAME.matches(it)}?.let{"/photos/$it"}?:JSONObject.NULL)
+        .put("illustrationSize",journal.mapStickerSize.coerceIn(24,96)).put("visited",journal.visited) }
 }).toString()
 
 internal fun mapNoteIds(text: String, journals: List<Journal>): List<String> {
