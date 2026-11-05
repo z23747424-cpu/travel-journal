@@ -2,6 +2,8 @@
 
 一个 Android 单机旅行手账应用。以照片与文字记录已去的地方，用独立的搜索页寻找回忆，用“旅行灵感”根据出游需求寻找下一站。首个主题为简洁杂志风。
 
+GitHub 下载：[1.0.0 测试版](https://github.com/z23747424-cpu/travel-journal/releases/tag/v1.0.0)。附件 `lvye-1.0.0.apk` 是 Android 安装包，`lvye-source-1.0.0.zip` 是源码包，`SHA256SUMS.txt` 提供校验值。安装包使用 debug 测试签名；当前仓库为私有仓库，需要登录有权限的 GitHub 账号访问。
+
 ## 使用
 
 1. 安装 `release/旅页-1.0.0.apk`，首次安装可能需要允许当前文件管理器安装应用。
