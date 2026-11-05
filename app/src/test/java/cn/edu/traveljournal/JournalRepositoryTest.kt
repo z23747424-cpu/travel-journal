@@ -37,6 +37,26 @@ class JournalRepositoryTest {
     }
     @After fun close() { repository.close() }
 
+    @Test fun cityCollageStyleAndPlannedFlagSurviveDatabaseAndBackup() {
+        val source=File(context.cacheDir,"city-collage.png")
+        source.outputStream().use{Bitmap.createBitmap(8,8,Bitmap.Config.ARGB_8888).compress(Bitmap.CompressFormat.PNG,100,it)}
+        val photo=repository.importPhoto(Uri.fromFile(source))
+        val city=Journal(id="city-style",title="杭州拼贴",photos=listOf(photo),latitude=30.2489,longitude=120.1481,
+            mapCityCode="330100",mapFillColor="#C4A58D",mapFillMode="photos")
+        val plan=Journal(id="planned-flag",title="想去宁波",body="计划旅行",latitude=29.8683,longitude=121.5440,visited=false,mapCityCode="330200")
+        repository.saveJournal(city);repository.saveJournal(plan)
+        val backup=ByteArrayOutputStream();repository.exportBackup(backup)
+        repository.close();repository=JournalRepository(context)
+        assertEquals(city,repository.journals().single{it.id==city.id})
+        repository.importBackup(ByteArrayInputStream(backup.toByteArray()))
+        val collages=repository.journals().filter{it.mapCityCode=="330100"}
+        assertEquals(2,collages.size)
+        assertTrue(collages.all{it.mapFillColor=="#C4A58D"&&it.mapFillMode=="photos"&&it.visited})
+        assertEquals(2,collages.map{it.photos.single()}.distinct().size)
+        assertTrue(collages.all{repository.photoFile(it.photos.single()).isFile})
+        assertTrue(repository.journals().filter{it.mapCityCode=="330200"}.all{!it.visited})
+    }
+
     @Test fun journalsAndDraftSurviveReopenAndDeletionRemovesSearch() {
         val j = Journal(id = "j", title = "海边", body = "日落")
         repository.saveJournal(j)
