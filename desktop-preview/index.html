@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>旅页 · 电脑交互预览</title><link rel="stylesheet" href="/preview.css"><script defer src="/preview.js"></script>
+</head>
+<body>
+<svg class="icon-library" aria-hidden="true"><defs>
+ <symbol id="i-map" viewBox="0 0 24 24"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Z M9 3v16 M15 5v16"/></symbol>
+ <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+ <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z"/></symbol>
+ <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h16 M4 17h16 M8 4v6 M16 14v6"/></symbol>
+ <symbol id="i-back" viewBox="0 0 24 24"><path d="m14 5-7 7 7 7"/></symbol>
+ <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12 M18 6 6 18"/></symbol>
+ <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14 M5 12h14"/></symbol>
+ <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+ <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7 M6 8v12h12V8 M10 20v-6h4v6"/></symbol>
+ <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 5-5 4 4 4-6 5 7"/></symbol>
+ <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V3c5-4 9 4 14 0v11c-5 4-9-4-14 0"/></symbol>
+ <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 5C9 2 5 3 3 4v16c3-2 6-2 9 0 3-2 6-2 9 0V4c-2-1-6-2-9 1Z M12 5v15"/></symbol>
+ <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4 10-10"/></symbol>
+</defs></svg>
+<main class="preview-workspace">
+  <aside class="preview-guide">
+    <a class="brand" href="/"><svg class="icon"><use href="#i-map"/></svg><span>旅页</span></a>
+    <h1>让回忆，<br>在地图上展开。</h1>
+    <p class="guide-intro">先看省份，再走进城市。<br>把去过的地方，拼成自己的旅行手账。</p>
+    <div class="size-switch" role="group" aria-label="预览尺寸"><button class="active" data-size="phone">手机</button><button data-size="tablet">平板</button></div>
+    <div class="guide-steps"><p><b>全国</b><span>点击省份，放大这片风景。</span></p><p><b>省内</b><span>城市清晰展开，周边省份虚化。</span></p><p><b>记录</b><span>点亮城市、贴照片，或插一面想去的旗。</span></p></div>
+    <button class="demo-button" id="demo-button"><svg class="icon"><use href="#i-spark"/></svg>载入示例，看看拼贴效果</button>
+    <p class="preview-note">这是电脑交互预览。记录仅保存在当前浏览器，与手机数据分开。后续修改会自动刷新，确认后再打包 Android。</p>
+    <div class="preview-status"><i></i><span id="connection-status">本地预览 · 准备中</span></div>
+  </aside>
+  <section class="device-area" aria-label="应用预览">
+    <div class="device-frame" id="device-frame">
+      <div class="app-shell">
+        <div class="phone-status" aria-hidden="true"><span id="clock">09:41</span><div class="status-signals"><span class="signal-bars"></span><span>5G</span><span class="battery"></span></div></div>
+        <header class="app-header"><div><button id="back-button" class="back-button" hidden><svg class="icon"><use href="#i-back"/></svg>全国</button><h2 id="screen-title">我的旅行地图</h2><p id="screen-subtitle">点击省份，翻开下一页回忆</p></div><button id="archive-button" class="icon-button" aria-label="查看全部手账"><svg class="icon"><use href="#i-book"/></svg></button></header>
+        <div class="app-content">
+          <section id="map-page" class="map-page">
+            <div id="map-stage" class="map-stage" tabindex="0" aria-label="旅行地图，点击省份放大，长按添加记录">
+              <svg id="atlas-map" role="group" aria-label="中国旅行地图"><defs id="map-defs"><filter id="context-blur" x="-500%" y="-500%" width="1100%" height="1100%"><feGaussianBlur id="blur-value" stdDeviation="0"/></filter></defs><g id="world"><g id="context-layer"></g><g id="active-layer"></g><g id="label-layer"></g><g id="marker-layer"></g></g></svg>
+              <div id="map-loading" class="map-loading">正在展开你的旅行地图…</div>
+              <div id="map-legend" class="map-legend"><span><i class="outline-swatch"></i>待出发</span><span><i class="filled-swatch"></i>已去过</span><span><svg class="icon"><use href="#i-flag"/></svg>想去</span></div>
+              <div class="zoom-controls"><button id="zoom-in" aria-label="放大地图"><svg class="icon"><use href="#i-plus"/></svg></button><button id="zoom-out" aria-label="缩小地图"><svg class="icon"><use href="#i-minus"/></svg></button><button id="reset-map" aria-label="返回全国地图"><svg class="icon"><use href="#i-home"/></svg></button></div>
+              <button id="find-city" class="find-city"><svg class="icon"><use href="#i-search"/></svg><span>找一座城</span></button>
+              <span id="province-focus-label" class="focus-label" hidden>周边省份已虚化</span>
+            </div>
+            <div class="map-footer"><p id="travel-stats">还没有足迹，先选一片喜欢的风景</p><button id="map-info">数据说明</button></div>
+          </section>
+          <section id="search-page" class="other-page" hidden><h3>把回忆找回来</h3><p>搜索地点、标题或手账里的文字。</p><label class="search-box"><svg class="icon"><use href="#i-search"/></svg><input id="record-search" placeholder="试试：杭州、日落、山间…"></label><div id="search-results"></div></section>
+          <section id="inspiration-page" class="other-page" hidden><h3>下一站，心之所向</h3><p>这次电脑预览专注地图体验，暂不调用 AI 服务。想去的地方可以先在地图上插旗。</p><button class="primary-button" id="back-to-map">去地图找一座城</button></section>
+          <section id="settings-page" class="other-page" hidden><h3>这本旅行手账</h3><p>电脑预览数据保存在当前浏览器，可导出留存。</p><button class="setting-row" id="export-records">导出预览记录<svg class="icon"><use href="#i-book"/></svg></button><button class="setting-row" id="import-records">导入预览记录<svg class="icon"><use href="#i-plus"/></svg></button><button class="setting-row danger" id="clear-records">清空预览记录<svg class="icon"><use href="#i-close"/></svg></button><p class="settings-footnote">这里的记录不会同步到手机，也不会修改 Android 工程中的个人数据。</p></section>
+          <div id="sheet-backdrop" class="sheet-backdrop" hidden></div><section id="bottom-sheet" class="bottom-sheet" role="dialog" aria-modal="true" aria-label="地点手账" hidden></section>
+        </div>
+        <nav class="bottom-nav" aria-label="主导航"><button data-tab="map" class="active"><svg class="icon"><use href="#i-map"/></svg><span>地图</span></button><button data-tab="search"><svg class="icon"><use href="#i-search"/></svg><span>搜索</span></button><button data-tab="inspiration"><svg class="icon"><use href="#i-spark"/></svg><span>灵感</span></button><button data-tab="settings"><svg class="icon"><use href="#i-settings"/></svg><span>设置</span></button></nav><div class="home-indicator" aria-hidden="true"></div>
+      </div>
+    </div>
+    <p class="device-caption">旅页 · 可交互预览<span id="demo-indicator" hidden>含示例记录</span></p>
+  </section>
+</main>
+<div id="toast" class="toast" role="status" hidden></div>
+<input type="file" id="photo-input" accept="image/png,image/jpeg,image/webp" multiple hidden><input type="file" id="import-input" accept="application/json,.json" hidden>
+</body></html>
