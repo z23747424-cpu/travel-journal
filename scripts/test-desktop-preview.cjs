@@ -7,9 +7,9 @@ const output=path.resolve(__dirname,'../.tools/desktop-preview-qa');fs.mkdirSync
 const base=process.env.TRAVEL_PREVIEW_URL||'http://127.0.0.1:8766/';
 (async()=>{
  const browser=await chromium.launch({headless:true,...(process.env.MAP_TEST_BROWSER?{executablePath:process.env.MAP_TEST_BROWSER}:{})});
- const errors=[],remote=[];
+ const errors=[],remote=[];let currentPage;
  try{
-  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();
+  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();currentPage=page;
   page.on('pageerror',e=>errors.push(e.message));
   page.on('request',r=>{const url=new URL(r.url());if(['http:','https:'].includes(url.protocol)&&!['127.0.0.1','localhost'].includes(url.hostname))remote.push(r.url());});
   await page.goto(base);await page.waitForFunction(()=>window.TravelPreview?.getState().cities===391);
@@ -36,12 +36,20 @@ const base=process.env.TRAVEL_PREVIEW_URL||'http://127.0.0.1:8766/';
   await clickCenter(page.locator('#label-layer [data-province="330000"]'));await page.waitForFunction(()=>window.TravelPreview.getState().province==='330000');await page.waitForTimeout(450);
   assert.ok(await page.locator('#active-layer image').count()>0);
   assert.equal(await page.locator('#active-layer [data-city="330200"]').getAttribute('class'),'city-shape');
+  // A flag opens its city archive in one click from the national view.
+  await page.locator('#reset-map').click();await page.waitForTimeout(450);
+  await clickCenter(page.locator('#marker-layer [data-record="demo-330200"]'));
+  assert.equal(await page.locator('#bottom-sheet .sheet-top h3').innerText(),'宁波市');
+  await page.getByRole('button',{name:'关闭卡片',exact:true}).click();
+  await page.locator('#reset-map').click();await page.waitForTimeout(450);
+  await clickCenter(page.locator('#label-layer [data-province="330000"]'));await page.waitForTimeout(450);
   await page.locator('#device-frame').screenshot({path:path.join(output,'phone-zhejiang-demo.png')});
   await clickCenter(page.locator('#label-layer [data-city="330100"]'));await page.waitForFunction(()=>!document.querySelector('#bottom-sheet').hidden);
+  assert.equal(await page.locator('.archive-cover').count(),1);
+  await page.locator('.memory-card').first().click();
   await page.getByRole('button',{name:'编辑这一页',exact:true}).click();
   await page.getByLabel('手账标题',{exact:true}).fill('杭州 · 电脑预览验证');
   await page.getByLabel('旅途故事',{exact:true}).fill('这是一条只保存在浏览器中的交互验证记录。');
-  await page.getByLabel('自定义城市颜色',{exact:true}).evaluate(e=>{e.value='#789d8c';e.dispatchEvent(new Event('input',{bubbles:true}));});
   const dataUrl=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=64;c.height=64;const g=c.getContext('2d');g.fillStyle='#d5b794';g.fillRect(0,0,64,64);g.fillStyle='#7b9984';g.fillRect(0,32,64,32);return c.toDataURL('image/png');});
   const [chooser]=await Promise.all([page.waitForEvent('filechooser'),page.getByRole('button',{name:'选择自己的照片 · 最多 4 张',exact:true}).click()]);
   await chooser.setFiles({name:'clearly-labeled-test-fixture.png',mimeType:'image/png',buffer:Buffer.from(dataUrl.split(',')[1],'base64')});
@@ -49,10 +57,21 @@ const base=process.env.TRAVEL_PREVIEW_URL||'http://127.0.0.1:8766/';
   await page.getByRole('button',{name:'保存到我的地图',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#bottom-sheet').hidden);
   await page.reload();await page.waitForFunction(()=>window.TravelPreview?.getState().records===6);
   await page.locator('[data-tab="search"]').click();await page.locator('#record-search').fill('电脑预览验证');
-  assert.equal(await page.locator('#search-results .city-row').count(),1);
-  await page.locator('#search-results .city-row').click();await page.getByRole('button',{name:'关闭卡片',exact:true}).click();
+  assert.equal(await page.locator('#search-results .memory-card').count(),1);
+  await page.locator('#search-results .memory-card').click();await page.getByRole('button',{name:'关闭卡片',exact:true}).click();
+  await page.locator('[data-tab="map"]').click();
   await page.locator('#reset-map').click();await page.waitForTimeout(450);
   await clickCenter(page.locator('#label-layer [data-province="330000"]'));await page.waitForTimeout(450);
+  // Writing must preserve the city's existing illustration and palette.
+  assert.equal(await page.locator('#active-layer [data-city="330100"]').evaluate(e=>e.style.fill),'rgb(169, 191, 174)');
+  assert.ok(await page.locator('#active-layer image').evaluateAll(images=>images.some(e=>e.getAttribute('href').startsWith('data:image/svg+xml'))));
+  await clickCenter(page.locator('#label-layer [data-city="330100"]'));
+  await page.getByRole('button',{name:'装饰这座城',exact:true}).click();
+  await page.getByLabel('自定义城市颜色',{exact:true}).evaluate(e=>{e.value='#789d8c';e.dispatchEvent(new Event('input',{bubbles:true}));});
+  await page.getByRole('button',{name:'将手账照片加入城市拼贴',exact:true}).click();
+  await page.getByLabel('水平位置',{exact:true}).evaluate(e=>{e.value='73';e.dispatchEvent(new Event('input',{bubbles:true}));});await page.getByLabel('照片放大',{exact:true}).evaluate(e=>{e.value='1.8';e.dispatchEvent(new Event('input',{bubbles:true}));});
+  await page.getByRole('button',{name:'保存城市装饰',exact:true}).click();
+  await page.getByRole('button',{name:'关闭卡片',exact:true}).click();
   assert.equal(await page.locator('#active-layer [data-city="330100"]').evaluate(e=>e.style.fill),'rgb(120, 157, 140)');
   assert.ok(await page.locator('#active-layer image').evaluateAll(images=>images.some(e=>e.getAttribute('href').startsWith('data:image/png'))));
   const cameraBefore=await page.evaluate(()=>window.TravelPreview.getState().camera);
@@ -69,8 +88,8 @@ const base=process.env.TRAVEL_PREVIEW_URL||'http://127.0.0.1:8766/';
   await page.getByRole('button',{name:'关闭卡片',exact:true}).click();
   await page.locator('#demo-button').click();await page.waitForFunction(()=>window.TravelPreview.getState().records===1&&!window.TravelPreview.getState().demo);
   await page.locator('[data-tab="search"]').click();await page.locator('#record-search').fill('电脑预览验证');
-  assert.equal(await page.locator('#search-results .city-row').count(),1,'Clearing examples must preserve a personalized photo/note.');
-  await page.locator('#search-results .city-row').click();await page.getByRole('button',{name:'关闭卡片',exact:true}).click();
+  assert.equal(await page.locator('#search-results .memory-card').count(),1,'Clearing examples must preserve a personalized photo/note.');
+  await page.locator('#search-results .memory-card').click();await page.getByRole('button',{name:'关闭卡片',exact:true}).click();await page.locator('[data-tab="map"]').click();
   await page.getByRole('button',{name:'平板',exact:true}).click();await page.waitForTimeout(450);
   assert.ok((await page.locator('#device-frame').boundingBox()).width>600);
   await page.locator('#device-frame').screenshot({path:path.join(output,'tablet-zhejiang.png')});
@@ -85,5 +104,5 @@ const base=process.env.TRAVEL_PREVIEW_URL||'http://127.0.0.1:8766/';
   assert.deepEqual(errors,[]);assert.deepEqual(remote,[]);
   const result={status:'PASS',provinceNames:34,cityUnits:391,focusedZhejiangCities:11,focusedSichuanCities:21,keyboardProvinceSelection:true,minimumZoomReturnsOverview:true,neighborBlur:true,overviewReturn:true,smallProvinceReadable:true,demoExplicit:true,customColor:true,localPhotoImport:true,reloadPersistence:true,personalizedDemoPreserved:true,searchPreview:true,wheelZoom:true,dragPan:true,longPressEditor:true,liveRefreshPreservesRecordsAndProvince:true,phoneAndTablet:true,narrowNoHorizontalOverflow:true,externalRequests:0,consoleErrors:errors,scope:'Desktop browser design preview only, not Android runtime verification.'};
   fs.writeFileSync(path.join(output,'results.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));
- }finally{await browser.close();}
+ }catch(error){if(currentPage){await currentPage.screenshot({path:path.join(output,'failure.png'),fullPage:true});console.error(await currentPage.locator('#bottom-sheet').innerText());}throw error;}finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

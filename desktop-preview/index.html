@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>旅页 · 电脑交互预览</title><link rel="stylesheet" href="/preview.css"><script defer src="/preview.js"></script>
+  <title>旅页 · 电脑交互预览</title><link rel="stylesheet" href="/preview.css"><link rel="stylesheet" href="/journal.css"><script defer src="/journal.js"></script><script defer src="/preview.js"></script>
 </head>
 <body>
 <svg class="icon-library" aria-hidden="true"><defs>
@@ -44,6 +44,7 @@
               <div id="map-legend" class="map-legend"><span><i class="outline-swatch"></i>待出发</span><span><i class="filled-swatch"></i>已去过</span><span><svg class="icon"><use href="#i-flag"/></svg>想去</span></div>
               <div class="zoom-controls"><button id="zoom-in" aria-label="放大地图"><svg class="icon"><use href="#i-plus"/></svg></button><button id="zoom-out" aria-label="缩小地图"><svg class="icon"><use href="#i-minus"/></svg></button><button id="reset-map" aria-label="返回全国地图"><svg class="icon"><use href="#i-home"/></svg></button></div>
               <button id="find-city" class="find-city"><svg class="icon"><use href="#i-search"/></svg><span>找一座城</span></button>
+              <button id="quick-record" class="quick-record"><svg class="icon"><use href="#i-plus"/></svg><span>留下一程</span></button>
               <span id="province-focus-label" class="focus-label" hidden>周边省份已虚化</span>
             </div>
             <div class="map-footer"><p id="travel-stats">还没有足迹，先选一片喜欢的风景</p><button id="map-info">数据说明</button></div>

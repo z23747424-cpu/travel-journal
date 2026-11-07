@@ -11,7 +11,9 @@ ATLAS = ROOT.parent / "app/src/main/assets/atlas/china-cities.json"
 FILES = {"/": (ROOT / "index.html", "text/html; charset=utf-8"),
          "/index.html": (ROOT / "index.html", "text/html; charset=utf-8"),
          "/preview.css": (ROOT / "preview.css", "text/css; charset=utf-8"),
+         "/journal.css": (ROOT / "journal.css", "text/css; charset=utf-8"),
          "/preview.js": (ROOT / "preview.js", "application/javascript; charset=utf-8"),
+         "/journal.js": (ROOT / "journal.js", "application/javascript; charset=utf-8"),
          "/atlas.json": (ATLAS, "application/json; charset=utf-8")}
 
 
@@ -19,7 +21,7 @@ class PreviewHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = urlsplit(self.path).path
         if path == "/health":
-            stamps = ";".join(str(p.stat().st_mtime_ns) for p in [ROOT / "index.html", ROOT / "preview.css", ROOT / "preview.js", ATLAS])
+            stamps = ";".join(str(p.stat().st_mtime_ns) for p in [ROOT / "index.html", ROOT / "preview.css", ROOT / "journal.css", ROOT / "preview.js", ROOT / "journal.js", ATLAS])
             body = json.dumps({"app": "travel-journal-desktop-preview", "version": 1,
                                "revision": hashlib.sha256(stamps.encode()).hexdigest()[:16]}).encode()
             mime = "application/json; charset=utf-8"
