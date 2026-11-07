@@ -59,8 +59,6 @@ function renderCamera(){
   elements.world.setAttribute('transform',`translate(${state.width/2} ${state.height/2}) scale(${k}) translate(${-x} ${-y})`);
   for(const label of labelGroups)label.e.setAttribute('transform',`translate(${label.x} ${label.y}) scale(${1/k})`);
   for(const marker of markerGroups)marker.e.setAttribute('transform',`translate(${marker.x} ${marker.y}) scale(${1/k})`);
-  $('#blur-value').setAttribute('stdDeviation',2.6/k);
-  const filter=$('#context-blur');filter.setAttribute('filterUnits','userSpaceOnUse');filter.setAttribute('x',x-state.width/2/k-10/k);filter.setAttribute('y',y-state.height/2/k-10/k);filter.setAttribute('width',(state.width+20)/k);filter.setAttribute('height',(state.height+20)/k);
 }
 function makeLabel(name,p,type,attrs={}){
   const e=svg('g',{...attrs,class:'label-group'});
@@ -104,7 +102,7 @@ function renderScene(){
   elements.context.replaceChildren();elements.active.replaceChildren();elements.labels.replaceChildren();elements.markers.replaceChildren();
   for(const n of [...elements.defs.querySelectorAll('clipPath')])n.remove();labelGroups=[];markerGroups=[];
   const focused=state.provinces.find(p=>p.code===state.province);elements.stage.classList.toggle('focused',!!focused);
-  for(const p of state.provinces){const path=svg('path',{d:p.shape.d,'fill-rule':'evenodd',class:focused?'context-province':'province-shape','data-province':p.code,tabindex:focused?-1:0,role:'button','aria-label':'进入'+p.name});elements.context.append(path);}
+  for(const p of state.provinces){if(p.code===focused?.code)continue;const path=svg('path',{d:p.shape.d,'fill-rule':'evenodd',class:focused?'context-province':'province-shape','data-province':p.code,tabindex:focused?-1:0,role:'button','aria-label':'进入'+p.name});elements.context.append(path);}
   const sea=state.sea.map(s=>svg('path',{d:s.d,class:'context-province','fill-rule':'evenodd'}));elements.context.append(...sea);
   if(focused)elements.active.append(svg('path',{d:focused.shape.d,class:'active-province','fill-rule':'evenodd'}));
   for(const city of state.cities){

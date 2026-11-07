@@ -39,13 +39,13 @@
         <div class="app-content">
           <section id="map-page" class="map-page">
             <div id="map-stage" class="map-stage" tabindex="0" aria-label="旅行地图，点击省份放大，长按添加记录">
-              <svg id="atlas-map" role="group" aria-label="中国旅行地图"><defs id="map-defs"><filter id="context-blur" x="-500%" y="-500%" width="1100%" height="1100%"><feGaussianBlur id="blur-value" stdDeviation="0"/></filter></defs><g id="world"><g id="context-layer"></g><g id="active-layer"></g><g id="label-layer"></g><g id="marker-layer"></g></g></svg>
+              <svg id="atlas-map" role="group" aria-label="中国旅行地图"><defs id="map-defs"></defs><g id="world"><g id="context-layer"></g><g id="active-layer"></g><g id="label-layer"></g><g id="marker-layer"></g></g></svg>
               <div id="map-loading" class="map-loading">正在展开你的旅行地图…</div>
               <div id="map-legend" class="map-legend"><span><i class="outline-swatch"></i>待出发</span><span><i class="filled-swatch"></i>已去过</span><span><svg class="icon"><use href="#i-flag"/></svg>想去</span></div>
               <div class="zoom-controls"><button id="zoom-in" aria-label="放大地图"><svg class="icon"><use href="#i-plus"/></svg></button><button id="zoom-out" aria-label="缩小地图"><svg class="icon"><use href="#i-minus"/></svg></button><button id="reset-map" aria-label="返回全国地图"><svg class="icon"><use href="#i-home"/></svg></button></div>
               <button id="find-city" class="find-city"><svg class="icon"><use href="#i-search"/></svg><span>找一座城</span></button>
               <button id="quick-record" class="quick-record"><svg class="icon"><use href="#i-plus"/></svg><span>留下一程</span></button>
-              <span id="province-focus-label" class="focus-label" hidden>周边省份已虚化</span>
+              <span id="province-focus-label" class="focus-label" hidden>周边已淡化</span>
             </div>
             <div class="map-footer"><p id="travel-stats">还没有足迹，先选一片喜欢的风景</p><button id="map-info">数据说明</button></div>
           </section>

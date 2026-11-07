@@ -21,7 +21,7 @@ const base=process.env.TRAVEL_PREVIEW_URL||'http://127.0.0.1:8766/';
   assert.equal(await page.locator('#active-layer .city-shape').count(),11);
   assert.equal(await page.locator('.province-name').count(),0);
   const background=await page.locator('#context-layer').evaluate(e=>({opacity:getComputedStyle(e).opacity,filter:getComputedStyle(e).filter}));
-  assert.ok(Number(background.opacity)<.3);assert.notEqual(background.filter,'none');
+  assert.ok(Number(background.opacity)>=.35&&Number(background.opacity)<=.6);assert.equal(background.filter,'none');
   await page.locator('#back-button').click();await page.waitForFunction(()=>window.TravelPreview.getState().province===null);await page.waitForTimeout(450);
   await page.locator('#label-layer [data-province="510000"]').focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>window.TravelPreview.getState().province==='510000');await page.waitForTimeout(450);
   assert.equal(await page.locator('#active-layer .city-shape').count(),21);
@@ -102,7 +102,7 @@ const base=process.env.TRAVEL_PREVIEW_URL||'http://127.0.0.1:8766/';
   await navigation;await page.waitForFunction(()=>window.TravelPreview?.getState().records===1);
   assert.equal(await page.evaluate(()=>window.TravelPreview.getState().province),'330000','Refresh should preserve the province being reviewed.');
   assert.deepEqual(errors,[]);assert.deepEqual(remote,[]);
-  const result={status:'PASS',provinceNames:34,cityUnits:391,focusedZhejiangCities:11,focusedSichuanCities:21,keyboardProvinceSelection:true,minimumZoomReturnsOverview:true,neighborBlur:true,overviewReturn:true,smallProvinceReadable:true,demoExplicit:true,customColor:true,localPhotoImport:true,reloadPersistence:true,personalizedDemoPreserved:true,searchPreview:true,wheelZoom:true,dragPan:true,longPressEditor:true,liveRefreshPreservesRecordsAndProvince:true,phoneAndTablet:true,narrowNoHorizontalOverflow:true,externalRequests:0,consoleErrors:errors,scope:'Desktop browser design preview only, not Android runtime verification.'};
+  const result={status:'PASS',provinceNames:34,cityUnits:391,focusedZhejiangCities:11,focusedSichuanCities:21,keyboardProvinceSelection:true,minimumZoomReturnsOverview:true,neighborFading:true,overviewReturn:true,smallProvinceReadable:true,demoExplicit:true,customColor:true,localPhotoImport:true,reloadPersistence:true,personalizedDemoPreserved:true,searchPreview:true,wheelZoom:true,dragPan:true,longPressEditor:true,liveRefreshPreservesRecordsAndProvince:true,phoneAndTablet:true,narrowNoHorizontalOverflow:true,externalRequests:0,consoleErrors:errors,scope:'Desktop browser design preview only, not Android runtime verification.'};
   fs.writeFileSync(path.join(output,'results.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));
  }catch(error){if(currentPage){await currentPage.screenshot({path:path.join(output,'failure.png'),fullPage:true});console.error(await currentPage.locator('#bottom-sheet').innerText());}throw error;}finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
