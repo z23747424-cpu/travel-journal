@@ -26,7 +26,7 @@ import kotlin.math.roundToInt
     onOpen: (Journal) -> Unit, onDemo: () -> Unit, onInspiration: () -> Unit,hasDraft:Boolean=false,onResume:()->Unit={}) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start=24.dp,end=24.dp,bottom=100.dp), verticalArrangement=Arrangement.spacedBy(22.dp)) {
         item { PageTitle("把旅途，留在这一页", if(journals.isEmpty()) "照片、文字，和那些舍不得忘记的瞬间。" else "${journals.size} 篇记录 · 按旅行日期排列") }
-        if(hasDraft)item{OutlinedButton(onClick=onResume,modifier=Modifier.fillMaxWidth()){Icon(Icons.Outlined.EditNote,null);Spacer(Modifier.width(8.dp));Text("继续未完成的手账")}}
+        if(hasDraft)item{OutlinedButton(onClick=onResume,modifier=Modifier.fillMaxWidth()){TravelIcon(R.drawable.ic_lvye_notebook_pen,null);Spacer(Modifier.width(8.dp));Text("继续未完成的手账")}}
         if (journals.isEmpty()) item {
             Column(verticalArrangement=Arrangement.spacedBy(18.dp)) {
                 EmptyLandscape()
@@ -44,12 +44,12 @@ import kotlin.math.roundToInt
 
 @Composable fun JournalCard(journal: Journal, repo: JournalRepository, reason: String = "", onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth().clickable(onClick=onClick),verticalArrangement=Arrangement.spacedBy(10.dp)) {
-        if(journal.photos.isNotEmpty()) LocalPhoto(repo.photoFile(journal.photos.first()),journal.title,Modifier.fillMaxWidth().height(235.dp))
+        if(journal.photos.isNotEmpty()) LocalPhoto(repo.photoFile(journal.photos.first()),journal.title,Modifier.fillMaxWidth().aspectRatio(1.45f))
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
-            Text(journal.place.ifBlank{"未填写地点"},color=MaterialTheme.colorScheme.primary, style=MaterialTheme.typography.labelLarge)
+            Text(journal.place.ifBlank{"未填写地点"},modifier=Modifier.weight(1f).padding(end=12.dp),maxLines=1,overflow=TextOverflow.Ellipsis,color=MaterialTheme.colorScheme.primary, style=MaterialTheme.typography.labelLarge)
             Text(journal.date,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Text(journal.title,style=MaterialTheme.typography.titleLarge)
+        Text(journal.title,style=MaterialTheme.typography.headlineSmall)
         if(journal.body.isNotBlank()) Text(journal.body,maxLines=2,overflow=TextOverflow.Ellipsis,style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
         if(reason.isNotBlank()) Text(reason,style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.primary)
         TagRow(journal.tags.take(4))
@@ -89,7 +89,7 @@ import kotlin.math.roundToInt
             OutlinedButton(enabled=task?.isActive!=true,onClick={ task=scope.launch {
                 try { recall=AiClient().recall(withContext(Dispatchers.IO){repo.loadConfig()},journal) }
                 catch(e:CancellationException){throw e} catch(e:Exception){onError(e.message?:"暂时无法回顾，请稍后重试")}finally{task=null}
-            } }) { Icon(Icons.Outlined.AutoAwesome,null);Spacer(Modifier.width(8.dp));Text("请${spirit.ifBlank{"账本精灵"}}一起回顾") }
+            } }) { TravelIcon(R.drawable.ic_lvye_sparkles,null);Spacer(Modifier.width(8.dp));Text("请${spirit.ifBlank{"账本精灵"}}一起回顾") }
             if(task?.isActive==true) AiProgress("正在翻阅这一页…"){task?.cancel()}
             if(recall.isNotBlank()) Message(recall)
         } }
@@ -157,7 +157,7 @@ import kotlin.math.roundToInt
         item { Column {
             draft.mapPoint()?.let{Text("已标地图位置 · ${it.label()}",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
             Row {
-                TextButton(onClick={mapPicker=true},enabled=!saving&&!importing){Icon(Icons.Outlined.Place,null);Spacer(Modifier.width(6.dp));Text(if(draft.mapPoint()==null)"在地图选点" else "更改地图位置")}
+                TextButton(onClick={mapPicker=true},enabled=!saving&&!importing){TravelIcon(R.drawable.ic_lvye_map_pin,null);Spacer(Modifier.width(6.dp));Text(if(draft.mapPoint()==null)"在地图选点" else "更改地图位置")}
                 if(draft.mapPoint()!=null)TextButton(onClick={onChange(draft.copy(latitude=null,longitude=null,mapCityCode=null))},enabled=!saving&&!importing){Text("移除标注")}
             }
         } }
@@ -184,7 +184,7 @@ import kotlin.math.roundToInt
                 IconButton(onClick={selectedForAi=selectedForAi-photo;onChange(draft.copy(photos=draft.photos-photo,mapSticker=draft.mapSticker.takeUnless{it==photo}))}){Icon(Icons.Outlined.Close,"移除照片")}
             }
             TextButton(onClick={onChange(draft.copy(mapSticker=if(draft.mapSticker==photo)null else photo))}){
-                Icon(if(draft.mapSticker==photo)Icons.Outlined.CheckCircle else Icons.Outlined.Place,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text(if(draft.mapSticker==photo)"取消这张地图插画" else "用这张图片作地图插画")
+                TravelIcon(if(draft.mapSticker==photo)R.drawable.ic_lvye_check else R.drawable.ic_lvye_map_pin,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text(if(draft.mapSticker==photo)"取消这张地图插画" else "用这张图片作地图插画")
             }
             if(draft.mapSticker==photo)Column {
                 Text(if(draft.mapPoint()!=null)"插画大小 · 全国视野自动缩小，放大后显示设定尺寸" else "补充地图位置后，这张插画会显示在地图上",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -203,7 +203,7 @@ import kotlin.math.roundToInt
                     val s=AiClient().describe(config,selected.map{repo.photoFile(it)},"地点：${latestDraft.place}；用户记录：${latestDraft.body}")
                     suggestion=s;suggestedTags=s.tags.joinToString("，");suggestedDescription=s.description;suggestedTitle=s.title
             }catch(e:CancellationException){throw e}catch(e:Exception){onError(e.message?:"识别失败，可以继续手动记录")}finally{aiTask=null}
-            } }){Icon(Icons.Outlined.AutoAwesome,null);Spacer(Modifier.width(8.dp));Text("让精灵整理选中照片（${selectedForAi.size}张）")}
+            } }){TravelIcon(R.drawable.ic_lvye_sparkles,null);Spacer(Modifier.width(8.dp));Text("让精灵整理选中照片（${selectedForAi.size}张）")}
             if(aiTask?.isActive==true) AiProgress("正在观察照片…"){aiTask?.cancel()}
             Text("生成的标签和文字由你确认后使用。草稿会在本机暂存。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         } }

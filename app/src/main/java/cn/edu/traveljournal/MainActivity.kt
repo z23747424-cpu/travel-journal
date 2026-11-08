@@ -94,14 +94,14 @@ class MainActivity:ComponentActivity(){
     BackHandler(enabled=saving||draft!=null||detailId!=null||tab!=0||archive){if(!saving)when{draft!=null->leave=true;detailId!=null->detailId=null;archive->archive=false;else->tab=0}}
     val detail=journals.find{it.id==detailId}
     val labels=listOf("地图","搜索","灵感","设置")
-    val icons=listOf(Icons.Outlined.Map,Icons.Outlined.Search,Icons.Outlined.Explore,Icons.Outlined.Tune)
+    val icons=listOf(R.drawable.ic_lvye_map,R.drawable.ic_lvye_search,R.drawable.ic_lvye_compass,R.drawable.ic_lvye_sliders_horizontal)
     BoxWithConstraints{
         val wide=maxWidth>=720.dp
         Scaffold(snackbarHost={SnackbarHost(snackbar)},
-            bottomBar={if(!wide&&draft==null&&detail==null&&!archive)NavigationBar(containerColor=MaterialTheme.colorScheme.surface){labels.forEachIndexed{i,label->NavigationBarItem(selected=tab==i,onClick={tab=i},icon={Icon(icons[i],label)},label={Text(label)},colors=NavigationBarItemDefaults.colors(indicatorColor=MaterialTheme.colorScheme.secondaryContainer))}}}
+            bottomBar={if(!wide&&draft==null&&detail==null&&!archive)NavigationBar(containerColor=MaterialTheme.colorScheme.surface){labels.forEachIndexed{i,label->NavigationBarItem(selected=tab==i,onClick={tab=i},icon={TravelIcon(icons[i],label)},label={Text(label)},colors=NavigationBarItemDefaults.colors(indicatorColor=MaterialTheme.colorScheme.secondaryContainer))}}}
         ){padding->
             Row(Modifier.fillMaxSize().padding(padding)){
-                if(wide&&draft==null&&detail==null&&!archive)NavigationRail{labels.forEachIndexed{i,label->NavigationRailItem(selected=tab==i,onClick={tab=i},icon={Icon(icons[i],label)},label={Text(label)})}}
+                if(wide&&draft==null&&detail==null&&!archive)NavigationRail{labels.forEachIndexed{i,label->NavigationRailItem(selected=tab==i,onClick={tab=i},icon={TravelIcon(icons[i],label)},label={Text(label)})}}
                 Box(Modifier.weight(1f).fillMaxHeight()){
                     when{
                         loading->Column(Modifier.align(Alignment.Center),horizontalAlignment=Alignment.CenterHorizontally){CircularProgressIndicator();Spacer(Modifier.height(16.dp));Text("正在翻开你的旅行手账…")}

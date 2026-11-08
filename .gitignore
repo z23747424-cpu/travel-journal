@@ -10,3 +10,5 @@ __pycache__/
 *.log
 .idea/
 *.iml
+
+release/SHA256SUMS-*.txt

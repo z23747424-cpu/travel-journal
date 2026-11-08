@@ -5,6 +5,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
@@ -44,6 +46,7 @@ import kotlinx.coroutines.withContext
     var atlas by remember { mutableStateOf<CityAtlas?>(null) }
     var showCities by remember { mutableStateOf(false) }
     var showCredits by remember { mutableStateOf(false) }
+    var focusedProvince by remember { mutableStateOf<AtlasProvince?>(null) }
     var importing by remember { mutableStateOf(false) }
     val controller=remember { NativeMapController() }
     val scope=rememberCoroutineScope()
@@ -66,21 +69,29 @@ import kotlinx.coroutines.withContext
         if(photoUris.isEmpty() && fillMode=="photos")fillMode="color"
     }
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().padding(start=20.dp,end=8.dp,top=8.dp),verticalAlignment=Alignment.CenterVertically) {
+        if(focusedProvince!=null)TextButton(onClick={controller.showChina()},modifier=Modifier.padding(start=12.dp)){TravelIcon(R.drawable.ic_lvye_arrow_left,null);Spacer(Modifier.width(8.dp));Text("全国")}
+        Row(Modifier.fillMaxWidth().padding(start=24.dp,end=12.dp,top=12.dp,bottom=14.dp),verticalAlignment=Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("我的旅行地图",style=MaterialTheme.typography.titleLarge)
+                Text(focusedProvince?.let{"${it.shortName} · 旅行手账"} ?: "我的旅行地图",style=MaterialTheme.typography.headlineMedium)
+                Spacer(Modifier.height(6.dp))
                 Text("已去 $visitedCities 城 · 想去 $flags 处",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            IconButton(onClick={showCredits=true}){Icon(Icons.Outlined.Info,"地图数据来源")}
-            IconButton(onClick=onAll){Icon(Icons.Outlined.AutoStories,"全部手账")}
+            IconButton(onClick=onAll){TravelIcon(R.drawable.ic_lvye_book_open,"全部手账")}
+        }
+        Row(Modifier.fillMaxWidth().padding(start=24.dp,end=12.dp,bottom=4.dp),verticalAlignment=Alignment.CenterVertically) {
+            MapLegend("待出发",false);Spacer(Modifier.width(14.dp));MapLegend("已去过",true)
+            Spacer(Modifier.width(14.dp));TravelIcon(R.drawable.ic_lvye_flag,null,Modifier.size(14.dp));Spacer(Modifier.width(4.dp));Text("想去",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.weight(1f))
+            IconButton(onClick={showCredits=true}){TravelIcon(R.drawable.ic_lvye_info,"地图数据来源",Modifier.size(18.dp))}
         }
         if(hasDraft)TextButton(onClick=onResume,modifier=Modifier.fillMaxWidth()){Text("继续未完成的手账")}
         Box(Modifier.weight(1f).fillMaxWidth()) {
             MapSurface(journals,Modifier.fillMaxSize(),initialPoint=if(cameraLat!=null&&cameraLon!=null)MapPoint(cameraLat!!,cameraLon!!)else null,initialZoom=cameraZoom,
                 onPoint={selectPoint(it)},onNotes={json->runCatching{mapNoteIds(json,journals)}.onSuccess{dismiss();selectedIds=it}.onFailure{onError("请放大地图后再查看这些笔记")}},
-                onCamera={p,z->cameraLat=p.latitude;cameraLon=p.longitude;cameraZoom=z},onMove=onMoveRecord,redrawKey=mapRevision,repo=repo,controller=controller,onAtlasReady={atlas=it})
+                onCamera={p,z->cameraLat=p.latitude;cameraLon=p.longitude;cameraZoom=z},onMove=onMoveRecord,redrawKey=mapRevision,repo=repo,controller=controller,onAtlasReady={atlas=it},onProvince={focusedProvince=it})
             MapZoomControls(controller,Modifier.align(Alignment.CenterEnd).padding(end=8.dp))
-            FilledTonalButton(onClick={showCities=true},modifier=Modifier.align(Alignment.BottomStart).padding(12.dp)){Icon(Icons.Outlined.Search,null);Spacer(Modifier.width(6.dp));Text("查找城市")}
+            OutlinedButton(onClick={showCities=true},modifier=Modifier.align(Alignment.BottomStart).padding(start=20.dp,bottom=16.dp)){TravelIcon(R.drawable.ic_lvye_search,null);Spacer(Modifier.width(6.dp));Text("找一座城")}
+            FilledTonalButton(onClick={if(hasDraft)onResume() else onNew(Journal())},modifier=Modifier.align(Alignment.BottomEnd).padding(end=20.dp,bottom=16.dp)){TravelIcon(R.drawable.ic_lvye_plus,null);Spacer(Modifier.width(6.dp));Text("留下一程")}
 
         }
     }
@@ -148,6 +159,14 @@ import kotlinx.coroutines.withContext
     }
 }
 
+@Composable private fun MapLegend(label:String,filled:Boolean) {
+    val color=MaterialTheme.colorScheme.primary
+    Row(verticalAlignment=Alignment.CenterVertically) {
+        Canvas(Modifier.size(12.dp)) { if(filled)drawRect(color.copy(alpha=.5f)) else drawRect(color.copy(alpha=.6f),style=Stroke(width=1.dp.toPx())) }
+        Spacer(Modifier.width(5.dp));Text(label,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
 @Composable fun MapLocationPicker(initial:MapPoint?,initialName:String,onDismiss:()->Unit,onChoose:(MapPoint,String)->Unit) {
     var latitude by rememberSaveable { mutableStateOf(initial?.latitude) }
     var longitude by rememberSaveable { mutableStateOf(initial?.longitude) }
@@ -176,13 +195,13 @@ import kotlinx.coroutines.withContext
 @Composable private fun MapZoomControls(controller:NativeMapController,modifier:Modifier=Modifier) {
     Column(modifier,verticalArrangement=Arrangement.spacedBy(8.dp)) {
         Surface(shape=MaterialTheme.shapes.small,color=MaterialTheme.colorScheme.surface,shadowElevation=2.dp) {
-            IconButton(onClick={controller.zoomIn()},modifier=Modifier.size(48.dp)){Icon(Icons.Outlined.Add,"放大地图")}
+            IconButton(onClick={controller.zoomIn()},modifier=Modifier.size(48.dp)){TravelIcon(R.drawable.ic_lvye_plus,"放大地图")}
         }
         Surface(shape=MaterialTheme.shapes.small,color=MaterialTheme.colorScheme.surface,shadowElevation=2.dp) {
-            IconButton(onClick={controller.zoomOut()},modifier=Modifier.size(48.dp)){Icon(Icons.Outlined.Remove,"缩小地图")}
+            IconButton(onClick={controller.zoomOut()},modifier=Modifier.size(48.dp)){TravelIcon(R.drawable.ic_lvye_minus,"缩小地图")}
         }
         Surface(shape=MaterialTheme.shapes.small,color=MaterialTheme.colorScheme.surface,shadowElevation=2.dp) {
-            IconButton(onClick={controller.showChina()},modifier=Modifier.size(48.dp)){Icon(Icons.Outlined.Public,"显示全国")}
+            IconButton(onClick={controller.showChina()},modifier=Modifier.size(48.dp)){TravelIcon(R.drawable.ic_lvye_map,"显示全国")}
         }
     }
 }

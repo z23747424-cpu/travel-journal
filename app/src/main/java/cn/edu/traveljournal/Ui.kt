@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -36,13 +37,17 @@ private val Green = Color(0xFF385B50)
         outline = Color(0xFF747F76), outlineVariant = Color(0xFFD8DCD3),
         error = Color(0xFFAA3432))
     val typography = Typography(
-        headlineLarge = Typography().headlineLarge.copy(fontSize = 32.sp, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Serif),
-        headlineMedium = Typography().headlineMedium.copy(fontSize = 28.sp, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Serif),
+        headlineLarge = Typography().headlineLarge.copy(fontSize = 32.sp, fontWeight = FontWeight.Normal, fontFamily = FontFamily.Serif),
+        headlineMedium = Typography().headlineMedium.copy(fontSize = 28.sp, fontWeight = FontWeight.Normal, fontFamily = FontFamily.Serif),
         titleLarge = Typography().titleLarge.copy(fontSize = 22.sp, fontWeight = FontWeight.Medium),
         bodyLarge = Typography().bodyLarge.copy(fontSize = 16.sp, lineHeight = 26.sp),
         bodyMedium = Typography().bodyMedium.copy(lineHeight = 23.sp))
     MaterialTheme(colorScheme = colors, typography = typography,
         shapes = Shapes(small = RoundedCornerShape(6.dp), medium = RoundedCornerShape(10.dp), large = RoundedCornerShape(16.dp)), content = content)
+}
+
+@Composable internal fun TravelIcon(resource:Int,description:String?,modifier:Modifier=Modifier) {
+    Icon(painterResource(resource),contentDescription=description,modifier=modifier.size(22.dp))
 }
 
 @Composable fun PageTitle(title: String, subtitle: String, action: (@Composable () -> Unit)? = null) {

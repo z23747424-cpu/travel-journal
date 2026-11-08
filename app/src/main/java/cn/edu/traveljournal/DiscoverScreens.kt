@@ -42,7 +42,7 @@ import kotlinx.coroutines.*
                         hits=AiClient().search(c,query,scopeJournals)
                     }catch(e:CancellationException){throw e}catch(e:Exception){error=e.message?:"智能搜索暂不可用";hits=localSearch(query,scopeJournals);method="本地关键词结果（智能搜索未完成）"}finally{job=null}
                 }
-            }){Icon(Icons.Outlined.AutoAwesome,null,Modifier.size(18.dp));Spacer(Modifier.width(8.dp));Text("精灵搜索")}
+            }){TravelIcon(R.drawable.ic_lvye_sparkles,null,Modifier.size(18.dp));Spacer(Modifier.width(8.dp));Text("精灵搜索")}
             OutlinedButton(enabled=query.isNotBlank()&&job?.isActive!=true,onClick={hits=localSearch(query,scopeJournals);searched=true;method="本地关键词搜索";error=""}){Text("本地搜索")}
         }}
         if(job?.isActive==true) item{AiProgress("正在寻找有关的回忆…"){searched=false;job?.cancel()}}
@@ -76,13 +76,35 @@ import kotlinx.coroutines.*
     val scope=rememberCoroutineScope()
     DisposableEffect(Unit){onDispose{job?.cancel()}}
     fun recommend(again:Boolean=false) {
-        val request=listOf(query,origin.takeIf{it.isNotBlank()}?.let{"出发地：$it"},duration.takeIf{it.isNotBlank()}?.let{"天数：$it"},budget.takeIf{it.isNotBlank()}?.let{"预算：每人${it}元人民币，含主要交通住宿餐饮"}).filterNotNull().joinToString("；")
-        if(request.isBlank()) return
+        // 方案 D：分离搜索词和完整需求
+        // searchQuery 只包含用户原始描述，用于 Tavily 搜索
+        // request 包含完整信息（出发地/天数/预算），用于 AI 整理
+        val searchQuery = query.trim()
+        val request = listOf(
+            query,
+            origin.takeIf{it.isNotBlank()}?.let{"出发地：$it"},
+            duration.takeIf{it.isNotBlank()}?.let{"天数：$it"},
+            budget.takeIf{it.isNotBlank()}?.let{"预算：每人${it}元人民币，含主要交通住宿餐饮"}
+        ).filterNotNull().joinToString("；")
+
+        if(searchQuery.isBlank()) return
         val omit=if(again&&request==lastQuery) excluded+destinations.map{it.name} else emptySet()
         excluded=omit;lastQuery=request;error="";result=null
         job=scope.launch {
-            try {val online=OnlineTravelClient().recommend(withContext(Dispatchers.IO){repo.loadConfig()},request,omit);destinations=online.destinations;result=online.result}
-            catch(e:CancellationException){throw e}catch(e:Exception){error=e.message?:"推荐暂不可用，请稍后再试"}finally{job=null}
+            try {
+                // 使用新的 recommend 签名，分别传递搜索词和完整需求
+                val online=OnlineTravelClient().recommend(
+                    withContext(Dispatchers.IO){repo.loadConfig()},
+                    request,      // 完整需求（给 AI 整理用）
+                    searchQuery,  // 精简搜索词（给 Tavily 用）
+                    omit
+                )
+                destinations=online.destinations
+                result=online.result
+            }
+            catch(e:CancellationException){throw e}
+            catch(e:Exception){error=e.message?:"推荐暂不可用，请稍后再试"}
+            finally{job=null}
         }
     }
     LazyColumn(Modifier.fillMaxSize().imePadding(),contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(18.dp)) {
@@ -172,7 +194,7 @@ import kotlinx.coroutines.*
             Row(verticalAlignment=Alignment.CenterVertically){Checkbox(wish.visited,{onSave(wish.copy(visited=it))});Text("我已经去过这里")}
         }
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
-            OutlinedButton(onClick={onStart(wish)}){Icon(Icons.Outlined.EditNote,null);Spacer(Modifier.width(6.dp));Text("开始记录这次旅行")}
+            OutlinedButton(onClick={onStart(wish)}){TravelIcon(R.drawable.ic_lvye_notebook_pen,null);Spacer(Modifier.width(6.dp));Text("开始记录这次旅行")}
             IconButton(onClick={deleting=true}){Icon(Icons.Outlined.DeleteOutline,"移除收藏")}
         }
     }

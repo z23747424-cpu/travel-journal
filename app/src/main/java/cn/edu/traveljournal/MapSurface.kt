@@ -38,7 +38,7 @@ private data class NativeMapData(val styles:Map<String,CityStyle>,val markers:Li
     onPoint: (MapPoint) -> Unit, onNotes: (String) -> Unit = {}, onCamera: (MapPoint, Double) -> Unit = { _, _ -> },
     chooseCenter: Boolean = false,
     onMove:(String,MapPoint)->Unit={_,_->},redrawKey:Int=0,
-    repo:JournalRepository?=null,controller:NativeMapController?=null,onAtlasReady:(CityAtlas)->Unit={},
+    repo:JournalRepository?=null,controller:NativeMapController?=null,onAtlasReady:(CityAtlas)->Unit={},onProvince:(AtlasProvince?)->Unit={},
 ) {
     val context=LocalContext.current
     val localController=remember { NativeMapController() }
@@ -83,7 +83,8 @@ private data class NativeMapData(val styles:Map<String,CityStyle>,val markers:Li
     Column(modifier) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             AndroidView(factory={ ctx -> NativeTravelMapView(ctx).apply { initialize(initialPoint,initialZoom);activeController.view=this } },modifier=Modifier.fillMaxSize(),update={ v ->
-                activeController.view=v;v.atlas=atlas;v.styles=data.styles;v.markers=data.markers;v.onPoint=onPoint;v.onNotes=onNotes;v.onCamera={ p,z -> viewportRevision++;onCamera(p,z) };v.onViewport={ viewportRevision++ };v.onMove=onMove;v.invalidate()
+                val atlasChanged=v.atlas!==atlas
+                activeController.view=v;v.atlas=atlas;v.styles=data.styles;v.markers=data.markers;v.onPoint=onPoint;v.onNotes=onNotes;v.onCamera={ p,z -> viewportRevision++;onCamera(p,z) };v.onViewport={ viewportRevision++ };v.onMove=onMove;v.onProvince=onProvince;if(atlasChanged)v.restoreProvince(initialPoint);v.invalidate()
             })
             if(atlas==null) Column(Modifier.align(Alignment.Center).padding(16.dp),horizontalAlignment=Alignment.CenterHorizontally) {
                 if(loadError) { Text("离线地图数据加载失败");TextButton(onClick={loadAttempt++}) { Text("重试") } }

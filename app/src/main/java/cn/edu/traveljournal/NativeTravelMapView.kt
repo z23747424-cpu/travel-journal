@@ -17,6 +17,7 @@ internal class NativeMapController {
     fun zoomIn() { view?.changeZoom(1.0) }
     fun zoomOut() { view?.changeZoom(-1.0) }
     fun focus(point:MapPoint) { view?.focus(point) }
+    fun focusProvince(province:AtlasProvince) { view?.focusProvince(province) }
     fun chooseCenter() { view?.chooseCenter() }
     fun clearSelection() { view?.clearSelection() }
 }
@@ -33,6 +34,9 @@ internal class NativeTravelMapView(context:Context): View(context) {
     var onCamera:(MapPoint,Double)->Unit = {_,_->}
     var onMove:(String,MapPoint)->Unit = {_,_->}
     var onViewport:()->Unit = {}
+    var onProvince:(AtlasProvince?)->Unit = {}
+    var focusedProvince:AtlasProvince? = null
+        private set
     private val paint=Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val cityBounds=RectF()
     private val destination=RectF()
@@ -63,24 +67,43 @@ internal class NativeTravelMapView(context:Context): View(context) {
     }
     private fun notifyCamera() { onCamera(MapProjection.unproject(center.first,center.second),zoom) }
     fun initialize(p:MapPoint?,z:Double) { if(p!=null) {center=MapProjection.project(p);zoom=z.coerceIn(3.0,12.0);updateDash()} }
-    fun showChina() { center=MapProjection.project(MapPoint(35.0,105.0));zoom=4.0;updateDash();invalidate();notifyCamera() }
-    fun changeZoom(delta:Double) { zoom=(zoom+delta).coerceIn(3.0,12.0);updateDash();invalidate();notifyCamera() }
-    fun focus(p:MapPoint) { center=MapProjection.project(p);zoom=7.5;updateDash();invalidate();notifyCamera() }
+    private fun setProvince(province:AtlasProvince?) { focusedProvince=province;onProvince(province) }
+    fun restoreProvince(p:MapPoint?) { if(zoom>4.0 && focusedProvince==null && p!=null)atlas?.provinceAt(p)?.let { setProvince(it) } }
+    fun showChina() { setProvince(null);center=MapProjection.project(MapPoint(35.0,105.0));zoom=4.0;updateDash();invalidate();notifyCamera() }
+    fun changeZoom(delta:Double) { zoom=(zoom+delta).coerceIn(3.0,12.0);if(zoom<=4.0)setProvince(null);updateDash();invalidate();notifyCamera() }
+    fun focus(p:MapPoint) { setProvince(atlas?.provinceAt(p));center=MapProjection.project(p);zoom=7.5;updateDash();invalidate();notifyCamera() }
+    fun focusProvince(province:AtlasProvince) {
+        setProvince(province)
+        val b=province.shape.projectedBounds()
+        val fit=min(width*.78/(b[2]-b[0]).coerceAtLeast(.01),height*.78/(b[3]-b[1]).coerceAtLeast(.01))
+        val base=min(width/70.0,height/60.0).coerceAtLeast(1.0)
+        center=(b[0]+b[2])/2 to (b[1]+b[3])/2
+        zoom=(4.0+ln(fit/base)/ln(2.0)).coerceIn(4.1,12.0)
+        updateDash();invalidate();notifyCamera()
+    }
     private fun select(p:MapPoint) { selectedPoint=p;invalidate();onPoint(p) }
     fun chooseCenter() { select(MapProjection.unproject(center.first,center.second)) }
     fun clearSelection() { selectedPoint=null;invalidate() }
     override fun onDraw(canvas:Canvas) {
         super.onDraw(canvas)
-        canvas.drawColor(Color.rgb(250,247,239))
+        canvas.drawColor(Color.rgb(247,245,239))
         val a=atlas ?: return
         val s=scale().toFloat()
         canvas.save();canvas.translate(width/2f,height/2f);canvas.scale(s,s);canvas.translate(-center.first.toFloat(),-center.second.toFloat())
-        paint.style=Paint.Style.STROKE;paint.color=Color.rgb(199,202,188);paint.strokeWidth=1.15f*density/s;paint.pathEffect=null
-        a.provinces.forEach { canvas.drawPath(it.path,paint) }
+        val focus=focusedProvince
+        val showCities=focus!=null || zoom>=6.5 || a.provinceAreas.isEmpty()
+        if(focus!=null) {
+            paint.style=Paint.Style.FILL;paint.color=Color.rgb(238,242,231);paint.pathEffect=null
+            canvas.drawPath(focus.shape.path,paint)
+        }
         a.cities.forEach { city ->
+            if(!visible(city.shape))return@forEach
+            val inFocus=focus==null || city.provinceCode==focus.code
+            val alpha=if(inFocus)255 else 55
             val style=styles[city.code]
             if(style!=null) {
                 paint.style=Paint.Style.FILL;paint.color=runCatching { Color.parseColor(style.journal.mapFillColor) }.getOrDefault(Color.rgb(169,191,174));paint.pathEffect=null
+                paint.alpha=alpha
                 canvas.drawPath(city.shape.path,paint)
                 if(style.journal.mapFillMode=="photos" && style.photos.isNotEmpty()) {
                     canvas.save();canvas.clipPath(city.shape.path)
@@ -92,30 +115,55 @@ internal class NativeTravelMapView(context:Context): View(context) {
                         else rect.set(b.left+b.width()*(i%columns)/columns,b.top+b.height()*(i/columns)/rows,b.left+b.width()*(i%columns+1)/columns,b.top+b.height()*(i/columns+1)/rows)
                         val factor=max(rect.width()/bmp.width,rect.height()/bmp.height);val sw=rect.width()/factor;val sh=rect.height()/factor
                         source.set(((bmp.width-sw)/2).toInt(),((bmp.height-sh)/2).toInt(),((bmp.width+sw)/2).toInt().coerceAtMost(bmp.width),((bmp.height+sh)/2).toInt().coerceAtMost(bmp.height))
-                        paint.color=Color.WHITE;canvas.drawBitmap(bmp,source,rect,paint)
+                        paint.color=Color.WHITE;paint.alpha=alpha;canvas.drawBitmap(bmp,source,rect,paint)
                     };canvas.restore()
                 }
             }
-            paint.style=Paint.Style.STROKE;paint.color=Color.rgb(192,198,183);paint.strokeWidth=0.7f*density/s
-            paint.pathEffect=if(style==null) dash else null
-            canvas.drawPath(city.shape.path,paint)
+            if(showCities && inFocus) {
+                paint.style=Paint.Style.STROKE;paint.color=Color.rgb(172,187,163);paint.strokeWidth=0.65f*density/s
+                paint.pathEffect=if(style==null) dash else null
+                canvas.drawPath(city.shape.path,paint)
+            }
         }
-        canvas.restore();paint.pathEffect=null
-        if(zoom>=6.5) { paint.color=Color.rgb(102,110,96);paint.textSize=11*density;paint.style=Paint.Style.FILL;a.cities.forEach { city -> val (x,y)=screen(city.center);if(x in 0f..width.toFloat() && y in 0f..height.toFloat()) canvas.drawText(city.name,x,y,paint) } }
+        paint.pathEffect=null;paint.style=Paint.Style.STROKE
+        a.provinces.forEach { shape ->
+            paint.color=Color.rgb(157,177,148);paint.alpha=if(focus==null || shape===focus.shape)255 else 85
+            paint.strokeWidth=(if(shape===focus?.shape)1.4f else .85f)*density/s
+            canvas.drawPath(shape.path,paint)
+        }
+        canvas.restore();paint.alpha=255;paint.pathEffect=null
+        drawLabels(canvas,a,showCities)
         markerGroups().forEach { group ->
             val first=group.first();val p=if(first==dragging) dragPoint ?: first.journal.mapPoint()!! else first.journal.mapPoint()!!;val (x,y)=screen(p)
             if(x < -60*density || x > width+60*density || y < -60*density || y > height+60*density) return@forEach
-            paint.style=Paint.Style.FILL
+            paint.style=Paint.Style.FILL;paint.alpha=if(focus==null || a.provinceAt(p)?.code==focus.code)255 else 70
             if(group.size>1) {paint.color=Color.rgb(188,118,95);canvas.drawCircle(x,y,13*density,paint);paint.color=Color.WHITE;paint.textAlign=Paint.Align.CENTER;paint.textSize=11*density;canvas.drawText(group.size.toString(),x,y+4*density,paint);paint.textAlign=Paint.Align.LEFT}
             else if(first.bitmap!=null) { val size=first.journal.mapStickerSize.coerceIn(24,if(zoom<7.0) 32 else 96)*density;destination.set(x-size/2,y-size/2,x+size/2,y+size/2);paint.color=Color.WHITE;canvas.drawBitmap(first.bitmap,null,destination,paint)
                 if(!first.journal.visited){paint.color=Color.rgb(219,160,90);flagPath.reset();flagPath.moveTo(x+size/4,y-size/2);flagPath.lineTo(x+size/4+10*density,y-size/2+4*density);flagPath.lineTo(x+size/4,y-size/2+8*density);flagPath.close();canvas.drawPath(flagPath,paint)}
             }
             else {paint.color=if(first.journal.visited) Color.rgb(174,105,84) else Color.rgb(219,160,90);canvas.drawCircle(x,y,5*density,paint);if(!first.journal.visited){paint.strokeWidth=2*density;canvas.drawLine(x,y,x,y-17*density,paint);flagPath.reset();flagPath.moveTo(x,y-17*density);flagPath.lineTo(x+12*density,y-13*density);flagPath.lineTo(x,y-9*density);flagPath.close();canvas.drawPath(flagPath,paint)}}
         }
+        paint.alpha=255
         selectedPoint?.let { selected ->
             val (x,y)=screen(selected);paint.color=Color.rgb(163,91,72);paint.style=Paint.Style.STROKE;paint.strokeWidth=2*density
             canvas.drawCircle(x,y,10*density,paint);canvas.drawLine(x-15*density,y,x+15*density,y,paint);canvas.drawLine(x,y-15*density,x,y+15*density,paint)
         }
+    }
+    private fun drawLabels(canvas:Canvas,a:CityAtlas,showCities:Boolean) {
+        paint.style=Paint.Style.FILL;paint.textSize=(if(showCities)11 else 12)*density
+        paint.textAlign=Paint.Align.CENTER;paint.typeface=Typeface.create("sans-serif",Typeface.NORMAL)
+        val placed=mutableListOf<RectF>()
+        fun label(text:String,p:MapPoint) {
+            val (x,y)=screen(p);val half=paint.measureText(text)/2
+            val box=RectF(x-half-3*density,y-13*density,x+half+3*density,y+4*density)
+            if(box.left<2*density || box.right>width-2*density || box.top<0 || box.bottom>height || placed.any { RectF.intersects(it,box) })return
+            placed+=box
+            paint.color=Color.rgb(247,245,239);paint.style=Paint.Style.STROKE;paint.strokeWidth=3*density;canvas.drawText(text,x,y,paint)
+            paint.color=Color.rgb(83,108,88);paint.style=Paint.Style.FILL;canvas.drawText(text,x,y,paint)
+        }
+        if(showCities) a.cities.filter { focusedProvince==null || it.provinceCode==focusedProvince?.code }.forEach { label(it.name,it.center) }
+        else a.provinceAreas.forEach { label(it.shortName,it.center) }
+        paint.textAlign=Paint.Align.LEFT
     }
     private fun markerGroups():List<List<MapMarker>> {
         if(zoom>=7.0) return markers.map { listOf(it) }
@@ -127,12 +175,23 @@ internal class NativeTravelMapView(context:Context): View(context) {
     private fun hit(x:Float,y:Float):List<MapMarker>? = markerGroups().filter { groupHit(it,x,y) }.flatten().takeIf { it.isNotEmpty() }
     private val gestures=GestureDetector(context,object:GestureDetector.SimpleOnGestureListener(){
         override fun onDown(e:MotionEvent)=true
-        override fun onSingleTapConfirmed(e:MotionEvent):Boolean { val group=hit(e.x,e.y);if(group!=null) onNotes(JSONArray(group.map { it.journal.id }).toString()) else atlas?.cityAt(point(e.x,e.y))?.let { city -> val ids=markers.filter { it.journal.mapPoint()?.let { p -> city.shape.contains(p) } == true }.map { it.journal.id };if(ids.isNotEmpty()) onNotes(JSONArray(ids).toString()) };performClick();return true }
+        override fun onSingleTapConfirmed(e:MotionEvent):Boolean {
+            val p=point(e.x,e.y);val a=atlas
+            val province=a?.provinceAt(p)
+            val group=hit(e.x,e.y)
+            if(group!=null)onNotes(JSONArray(group.map { it.journal.id }).toString())
+            else if(province!=null && focusedProvince?.code!=province.code)focusProvince(province)
+            else a?.cityAt(p)?.let { city ->
+                val ids=markers.filter { it.journal.mapPoint()?.let { q -> city.shape.contains(q) } == true }.map { it.journal.id }
+                if(ids.isNotEmpty())onNotes(JSONArray(ids).toString()) else select(p)
+            }
+            performClick();return true
+        }
         override fun onDoubleTap(e:MotionEvent):Boolean { zoomAt(1.0,e.x,e.y);notifyCamera();return true }
         override fun onLongPress(e:MotionEvent) { if(multiTouch)return;val group=markerGroups().lastOrNull { groupHit(it,e.x,e.y) };val item=group?.singleOrNull();if(item?.journal?.mapSticker!=null){dragging=item;dragPoint=item.journal.mapPoint();parent?.requestDisallowInterceptTouchEvent(true)}else if(group==null) select(point(e.x,e.y)) }
         override fun onScroll(e1:MotionEvent?,e2:MotionEvent,dx:Float,dy:Float):Boolean { if(dragging!=null){dragPoint=point(e2.x,e2.y);moved=true}else if(!multiTouch){val s=scale();center=(center.first+dx/s) to (center.second+dy/s);moved=true};invalidate();return true }
     })
-    private fun zoomAt(delta:Double,x:Float,y:Float) { val before=point(x,y);zoom=(zoom+delta).coerceIn(3.0,12.0);updateDash();val after=point(x,y);val a=MapProjection.project(before);val b=MapProjection.project(after);center=(center.first+a.first-b.first) to (center.second+a.second-b.second);invalidate() }
+    private fun zoomAt(delta:Double,x:Float,y:Float) { val before=point(x,y);zoom=(zoom+delta).coerceIn(3.0,12.0);if(zoom<=4.0)setProvince(null);updateDash();val after=point(x,y);val a=MapProjection.project(before);val b=MapProjection.project(after);center=(center.first+a.first-b.first) to (center.second+a.second-b.second);invalidate() }
     private val scaler=ScaleGestureDetector(context,object:ScaleGestureDetector.SimpleOnScaleGestureListener(){ override fun onScale(d:ScaleGestureDetector):Boolean { zoomAt(ln(d.scaleFactor.toDouble())/ln(2.0),d.focusX,d.focusY);moved=true;return true } })
     // GestureDetector calls performClick after confirming a single tap; drags and long presses are not clicks.
     @SuppressLint("ClickableViewAccessibility")

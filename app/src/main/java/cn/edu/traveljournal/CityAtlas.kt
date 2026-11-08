@@ -22,6 +22,7 @@ internal class AtlasShape(val polygons: List<List<List<Pair<Double,Double>>>>) {
     private val bounds = polygons.flatten().flatten().let { points ->
         if (points.isEmpty()) doubleArrayOf(0.0,0.0,0.0,0.0) else doubleArrayOf(points.minOf { it.first }, points.minOf { it.second }, points.maxOf { it.first }, points.maxOf { it.second })
     }
+    fun projectedBounds():DoubleArray = bounds.copyOf()
     // Projected area is used only to make overlap resolution deterministic.
     val area:Double = polygons.sumOf { polygon -> polygon.mapIndexed { index, ring ->
         val signed = ring.indices.sumOf { i -> val a=ring[i]; val b=ring[(i+1)%ring.size]; a.first*b.second-b.first*a.second }
@@ -54,8 +55,14 @@ internal class AtlasShape(val polygons: List<List<List<Pair<Double,Double>>>>) {
 }
 
 internal class AtlasCity(val code:String,val name:String,val provinceCode:String,val provinceName:String,val center:MapPoint,internal val shape:AtlasShape)
-internal class CityAtlas(val cities:List<AtlasCity>,internal val provinces:List<AtlasShape>) {
+internal class AtlasProvince(val code:String,val name:String,val center:MapPoint,val shape:AtlasShape) {
+    val shortName:String get() = name.removeSuffix("特别行政区").removeSuffix("维吾尔自治区")
+        .removeSuffix("壮族自治区").removeSuffix("回族自治区").removeSuffix("自治区").removeSuffix("省").removeSuffix("市")
+}
+internal class CityAtlas(val cities:List<AtlasCity>,internal val provinces:List<AtlasShape>,val provinceAreas:List<AtlasProvince> = emptyList()) {
     fun cityAt(point:MapPoint):AtlasCity? = cities.asSequence().filter { it.shape.contains(point) }.minWithOrNull(compareBy<AtlasCity> { it.shape.area }.thenBy { it.code })
+    fun provinceAt(point:MapPoint):AtlasProvince? = provinceAreas.asSequence().filter { it.shape.contains(point) }
+        .minWithOrNull(compareBy<AtlasProvince> { it.shape.area }.thenBy { it.code })
     fun visitedJournalsByCity(journals:List<Journal>):Map<String,List<Journal>> = journals.asSequence()
         .filter { it.visited }.mapNotNull { journal -> journal.mapPoint()?.let { point -> cityAt(point)?.let { it.code to journal } } }
         .groupBy({ it.first }, { it.second })
@@ -77,12 +84,22 @@ internal class CityAtlas(val cities:List<AtlasCity>,internal val provinces:List<
                     else -> error("Unsupported geometry")
                 })
             }
-            val provinces = root.getJSONArray("provinces").let { a -> (0 until a.length()).map { shape(a.getJSONObject(it).getJSONObject("geometry")) } }
+            val provinceAreas=mutableListOf<AtlasProvince>()
+            val provinces = root.getJSONArray("provinces").let { a -> (0 until a.length()).map { i ->
+                val feature=a.getJSONObject(i)
+                val outline=shape(feature.getJSONObject("geometry"))
+                val p=feature.optJSONObject("properties")
+                if(p!=null && p.optString("name").isNotBlank()) {
+                    val c=p.optJSONArray("centroid") ?: p.optJSONArray("center")
+                    if(c!=null) provinceAreas+=AtlasProvince(p.get("adcode").toString(),p.getString("name"),MapPoint(c.getDouble(1),c.getDouble(0)),outline)
+                }
+                outline
+            } }
             val cities = root.getJSONArray("cities").let { a -> (0 until a.length()).map { i ->
                 val f=a.getJSONObject(i); val p=f.getJSONObject("properties"); val c=p.getJSONArray("center")
                 AtlasCity(p.getString("code"),p.getString("name"),p.getString("provinceCode"),p.getString("provinceName"),MapPoint(c.getDouble(1),c.getDouble(0)),shape(f.getJSONObject("geometry")))
             } }
-            return CityAtlas(cities,provinces)
+            return CityAtlas(cities,provinces,provinceAreas)
         }
     }
 }

@@ -48,7 +48,7 @@ class NativeCanvasRenderTest {
         val image=android.graphics.Bitmap.createBitmap(480,800,android.graphics.Bitmap.Config.ARGB_8888)
         view.draw(android.graphics.Canvas(image))
         assertEquals(android.graphics.Color.BLUE,image.getPixel(240,400))
-        assertEquals(android.graphics.Color.rgb(250,247,239),image.getPixel(350,400))
+        assertEquals(android.graphics.Color.rgb(247,245,239),image.getPixel(350,400))
     }
     @Test fun measuredPhoneAndTabletRenderOutlinesAndVisitedCity() {
         val atlas=CityAtlas.parse("""{"version":1,"provinces":[],"cities":[{"properties":{"code":"a","name":"A","provinceCode":"p","provinceName":"P","center":[105,35]},"geometry":{"type":"Polygon","coordinates":[[[100,30],[110,30],[110,40],[100,40],[100,30]]]}},{"properties":{"code":"b","name":"B","provinceCode":"p","provinceName":"P","center":[115,35]},"geometry":{"type":"Polygon","coordinates":[[[111,30],[119,30],[119,40],[111,40],[111,30]]]}}]}""")
@@ -72,10 +72,10 @@ class NativeCanvasRenderTest {
                 return bitmap.getPixel((w/2+(target.first-origin.first)*scale).toInt(),(h/2+(target.second-origin.second)*scale).toInt())
             }
             assertEquals(android.graphics.Color.rgb(196,165,141),sample(MapPoint(32.0,104.0)))
-            assertEquals(android.graphics.Color.rgb(250,247,239),sample(MapPoint(32.0,114.0)))
+            assertEquals(android.graphics.Color.rgb(247,245,239),sample(MapPoint(32.0,114.0)))
             assertTrue("visited fill absent",pixels.any { it == android.graphics.Color.rgb(196,165,141) })
             assertTrue("planned flag absent",pixels.any { it == android.graphics.Color.rgb(219,160,90) })
-            assertTrue("unvisited background absent",pixels.any { it == android.graphics.Color.rgb(250,247,239) })
+            assertTrue("unvisited background absent",pixels.any { it == android.graphics.Color.rgb(247,245,239) })
             assertTrue("boundary absent",pixels.any { val r=android.graphics.Color.red(it);val g=android.graphics.Color.green(it);val b=android.graphics.Color.blue(it);r in 190..230 && g in 195..235 && b in 180..225 })
             val dir=nativeQaDir();dir.mkdirs()
             java.io.File(dir,"native-view-${w}x${h}.png").outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }
@@ -176,7 +176,7 @@ class RealAtlasCanvasTest {
             }
             val image=android.graphics.Bitmap.createBitmap(w,h,android.graphics.Bitmap.Config.ARGB_8888);v.draw(android.graphics.Canvas(image))
             val pixels=IntArray(w*h);image.getPixels(pixels,0,w,0,0,w,h)
-            assertTrue(pixels.any { it != android.graphics.Color.rgb(250,247,239) })
+            assertTrue(pixels.any { it != android.graphics.Color.rgb(247,245,239) })
             val dir=nativeQaDir();dir.mkdirs();java.io.File(dir,"real-atlas-fixture-$region-${w}x${h}.png").outputStream().use { image.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }
         }
     }

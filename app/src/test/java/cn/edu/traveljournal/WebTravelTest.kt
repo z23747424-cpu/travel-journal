@@ -14,7 +14,7 @@ class WebTravelTest {
     @Test fun realSearchStepPrecedesAiAndUsesSeparateCredential() = runBlocking {
         val steps=mutableListOf<String>()
         val search=WebSearchClient(AiTransport{settings,request->
-            steps+="search";assertEquals("search-only",settings.apiKey);assertEquals(6,request.getInt("max_results"));searchJson
+            steps+="search";assertEquals("search-only",settings.apiKey);assertEquals(10,request.getInt("max_results"));assertEquals("advanced",request.getString("search_depth"));searchJson
         })
         val ai=AiClient(AiTransport{settings,request->
             steps+="ai";assertEquals("ai-only",settings.apiKey);assertTrue(request.toString().contains("https://example.org/alps"));modelJson
@@ -59,5 +59,25 @@ class WebTravelTest {
         val result=OnlineTravelClient(search,ai).recommend(config,"任意地方",emptySet())
         assertTrue(result.destinations.isEmpty())
         assertEquals(0,modelCalls)
+    }
+    @Test fun conciseSearchAndFullRequirementsStaySeparate()=runBlocking {
+        val search=WebSearchClient(AiTransport{_,request->assertEquals("春节去海南看海",request.getString("query"));searchJson})
+        val ai=AiClient(AiTransport{_,request->assertTrue(request.toString().contains("预算：每人10000"));modelJson})
+        OnlineTravelClient(search,ai).recommend(config,"春节去海南看海；预算：每人10000","春节去海南看海",emptySet())
+        Unit
+    }
+    @Test fun emptySearchBroadensWithoutRepeatingOrCallingModelWithoutSources()=runBlocking {
+        val seen=mutableListOf<String>();var modelCalls=0
+        val search=WebSearchClient(AiTransport{_,request->seen+=request.getString("query");"""{"results":[]}"""})
+        val ai=AiClient(AiTransport{_,_->modelCalls++;modelJson})
+        val result=OnlineTravelClient(search,ai).recommend(config,"完整需求","春节去海南看海；出发地：重庆；天数：7；预算：10000",emptySet())
+        assertEquals(listOf("春节去海南看海；出发地：重庆；天数：7；预算：10000","春节去海南看海","海南"),seen)
+        assertTrue(result.destinations.isEmpty());assertEquals(0,modelCalls)
+    }
+    @Test fun unchangedSearchIsNotRepeated()=runBlocking {
+        var calls=0
+        val search=WebSearchClient(AiTransport{_,_->calls++;"""{"results":[]}"""})
+        OnlineTravelClient(search,AiClient(AiTransport{_,_->error("no sources")})).recommend(config,"想看海",emptySet())
+        assertEquals(1,calls)
     }
 }

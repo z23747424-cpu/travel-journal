@@ -3,6 +3,8 @@ package cn.edu.traveljournal
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
@@ -32,9 +34,16 @@ import java.time.LocalDate
     var task by remember{mutableStateOf<Job?>(null)}
     var archiveBusy by remember{mutableStateOf(false)}
     var confirmClear by remember{mutableStateOf(false)}
+    var showLicenses by remember{mutableStateOf(false)}
     var importUri by remember{mutableStateOf<android.net.Uri?>(null)}
     val scope=rememberCoroutineScope()
     val context=LocalContext.current
+    if(showLicenses) {
+        val license=remember { context.assets.open("licenses/lucide-LICENSE.txt").bufferedReader().use { it.readText() } }
+        AlertDialog(onDismissRequest={showLicenses=false},title={Text("Lucide 图标许可")},text={
+            Text(license,Modifier.heightIn(max=420.dp).verticalScroll(rememberScrollState()),style=MaterialTheme.typography.bodySmall)
+        },confirmButton={TextButton(onClick={showLicenses=false}){Text("关闭")}})
+    }
     fun current()=AiConfig(endpoint.trim(),key.trim(),model.trim(),name.trim().take(30),consent,searchKey.trim())
     DisposableEffect(Unit){onDispose{task?.cancel()}}
     val exporter=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")){uri->
@@ -58,7 +67,7 @@ import java.time.LocalDate
         item{HorizontalDivider();Text("联网搜索",style=MaterialTheme.typography.titleLarge);Message("旅行推荐先通过 Tavily 检索网页，再请精灵整理。不使用内置目的地范围；普通模型接口不会自动拥有联网能力。")}
         item{OutlinedTextField(searchKey,{searchKey=it},label={Text("Tavily 搜索 API 密钥")},modifier=Modifier.fillMaxWidth(),singleLine=true,visualTransformation=PasswordVisualTransformation())}
         item{TextButton(onClick={searchKey="";onSave(current().copy(searchApiKey=""))}){Text("清除搜索密钥")}}
-        item{Row(verticalAlignment=Alignment.Top){Checkbox(consent,{consent=it});Text("我了解：使用精灵时，选定照片或文字会发送给配置的 AI 服务商；旅行推荐的出游条件会发送给 Tavily 搜索服务，网页资料交给 AI 整理。调用可能产生费用。地图只加载所浏览区域的底图，不发送手账正文。",modifier=Modifier.padding(top=10.dp),style=MaterialTheme.typography.bodyMedium)}}
+        item{Row(verticalAlignment=Alignment.Top){Checkbox(consent,{consent=it});Text("我了解：使用精灵时，选定照片或文字会发送给配置的 AI 服务商；旅行推荐的出游条件会发送给 Tavily 搜索服务，网页资料交给 AI 整理。调用可能产生费用。地图在本机绘制，不请求在线底图。",modifier=Modifier.padding(top=10.dp),style=MaterialTheme.typography.bodyMedium)}}
         item{Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){
             Button(onClick={
                 try{if(endpoint.isNotBlank())normalizeEndpoint(endpoint);onSave(current());result="";resultError=false}
@@ -80,7 +89,7 @@ import java.time.LocalDate
             OutlinedButton(onClick={importer.launch(arrayOf("application/zip","application/octet-stream"))},enabled=!archiveBusy){Text("导入备份")}
         }}
         if(archiveBusy)item{LinearProgressIndicator(Modifier.fillMaxWidth());Message("正在处理备份，请稍候…")}
-        item{HorizontalDivider();Spacer(Modifier.height(18.dp));Text("当前主题 · 杂志",style=MaterialTheme.typography.titleMedium);Message("从地图出发，用照片和文字留住当时的心情。");Text("旅页 1.2 · 插画旅行地图\nAI 提供建议，记录由你决定。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+        item{HorizontalDivider();Spacer(Modifier.height(18.dp));Text("当前主题 · 杂志",style=MaterialTheme.typography.titleMedium);Message("从地图出发，用照片和文字留住当时的心情。");Text("旅页 1.4.0 · 旅行地图与手账\nAI 提供建议，记录由你决定。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant);TextButton(onClick={showLicenses=true}){Text("图标开源许可")}}
     }
     if(confirmClear)AlertDialog(onDismissRequest={confirmClear=false},title={Text("清除 AI 密钥？")},text={Text("本地手账和其他设置会保留。之后可重新填写密钥。")},confirmButton={TextButton(onClick={key="";onSave(current().copy(apiKey=""));confirmClear=false;result=""}){Text("清除")}},dismissButton={TextButton(onClick={confirmClear=false}){Text("取消")}})
     if(importUri!=null)AlertDialog(onDismissRequest={importUri=null},title={Text("导入手账备份？")},text={Text("会合并手账、照片与想去清单，同名标识将作为新记录导入。现有记录不会被覆盖。")},confirmButton={TextButton(onClick={
