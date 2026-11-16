@@ -23,7 +23,15 @@ data class Journal(
     val mapCityCode: String? = null,
     val mapFillColor: String = "#A9BFAE",
     val mapFillMode: String = "color",
+    val provinceCode: String? = null,
+    val city: String = "",
+    // 封面：手账默认用第一张照片；选了别的照片就记在这里（必须是 photos 里的一张）。
+    val coverPhoto: String? = null,
 )
+
+/** 封面必须是自己的照片；旧数据没有 coverPhoto 时退回第一张。 */
+internal fun journalCover(journal: Journal): String? =
+    journal.coverPhoto?.takeIf { it in journal.photos } ?: journal.photos.firstOrNull()
 
 data class Destination(
     val id: String = "",
@@ -54,9 +62,8 @@ data class AiConfig(
     val model: String = "",
     val spiritName: String = "",
     val consent: Boolean = false,
-    val searchApiKey: String = "",
 ) {
-    override fun toString(): String = "AiConfig(baseUrl=$baseUrl, apiKey=[redacted], model=$model, spiritName=$spiritName, consent=$consent, searchApiKey=[redacted])"
+    override fun toString(): String = "AiConfig(baseUrl=$baseUrl, apiKey=[redacted], model=$model, spiritName=$spiritName, consent=$consent)"
 }
 
 data class SearchHit(val id: String, val reason: String = "")

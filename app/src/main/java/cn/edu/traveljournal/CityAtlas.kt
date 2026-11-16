@@ -66,6 +66,52 @@ internal class CityAtlas(val cities:List<AtlasCity>,internal val provinces:List<
     fun visitedJournalsByCity(journals:List<Journal>):Map<String,List<Journal>> = journals.asSequence()
         .filter { it.visited }.mapNotNull { journal -> journal.mapPoint()?.let { point -> cityAt(point)?.let { it.code to journal } } }
         .groupBy({ it.first }, { it.second })
+
+    /**
+     * 从目的地 / 地区文字猜测省份，用于新建计划时自动填「关联省份」。
+     * 判定优先级：完全等于省名或简称 > 文字里出现省名或完整城市名 > 城市名以该文字开头。
+     * 猜不出（如海外目的地）返回 null，界面上仍可选「不关联」。
+     */
+    fun provinceCodeFor(vararg hints:String):String? {
+        val texts=hints.mapNotNull { it.trim().takeIf(String::isNotBlank) }
+        if(texts.isEmpty())return null
+        var best:Pair<Int,String>?=null
+        fun consider(kind:Int,matched:Int,code:String){
+            if(code.isBlank())return
+            val score=kind*1000+matched
+            if(best==null||score>best!!.first)best=score to code
+        }
+        texts.forEach { text ->
+            // 县城 / 景区名不在「地级市」索引里，但旅行推荐常直接给这些名字。
+            popularCountyProvinces.forEach { (name,code) ->
+                when {
+                    text==name -> consider(3,name.length,code)
+                    text.contains(name) -> consider(2,name.length,code)
+                }
+            }
+            provinceAreas.forEach { province ->
+                val aliases=buildList {
+                    add(province.name);add(province.shortName)
+                    if(province.shortName=="内蒙古")add("内蒙")
+                }.filter { it.length>=2 }.distinct()
+                aliases.forEach { alias ->
+                    when {
+                        text==alias -> consider(3,alias.length,province.code)
+                        text.contains(alias) -> consider(2,alias.length,province.code)
+                    }
+                }
+            }
+            cities.forEach { city ->
+                if(city.name.length<2)return@forEach
+                when {
+                    text==city.name -> consider(3,city.name.length,city.provinceCode)
+                    text.contains(city.name) -> consider(2,city.name.length,city.provinceCode)
+                    text.length>=2 && city.name.startsWith(text) -> consider(1,text.length,city.provinceCode)
+                }
+            }
+        }
+        return best?.second
+    }
     companion object {
         @Volatile private var cached: CityAtlas? = null
         fun load(context:Context):CityAtlas = cached ?: synchronized(this) {

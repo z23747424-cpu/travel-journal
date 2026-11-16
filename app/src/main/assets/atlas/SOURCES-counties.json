@@ -1,0 +1,293 @@
+{
+  "file": "county-index.json + counties/{provinceCode}.json",
+  "builtOn": "2026-11-13",
+  "provinceUnits": 34,
+  "secondLevelUnits": 2872,
+  "indexSha256": "0bc244dd32f1c3b870361f693d70a04c9e5e45201b04af08da88854fd41e8d4f",
+  "indexBytes": 351393,
+  "geometryBytes": 7929085,
+  "provinces": [
+    {
+      "code": "110000",
+      "name": "北京市",
+      "units": 16,
+      "bytes": 41103,
+      "sha256": "4111e043474a3b938183680f365a4e3dfa6e3a3f89bbe628ec3c2b8eff5d9076"
+    },
+    {
+      "code": "120000",
+      "name": "天津市",
+      "units": 16,
+      "bytes": 34049,
+      "sha256": "580e0032cc91286d3038c4de46e5d9d6bb0daf3d91ef378cec80c2d8ca243b6a"
+    },
+    {
+      "code": "130000",
+      "name": "河北省",
+      "units": 167,
+      "bytes": 359623,
+      "sha256": "8bc57a3fd74be1d4e31e4cc2959937e64dd18ebfd266d0e4f5d44a8f1abdc00d"
+    },
+    {
+      "code": "140000",
+      "name": "山西省",
+      "units": 117,
+      "bytes": 214312,
+      "sha256": "a5f8f9f0ae833307cadefbec620a7a9e01c3e562b7703e9a0a1732f74475c150"
+    },
+    {
+      "code": "150000",
+      "name": "内蒙古自治区",
+      "units": 103,
+      "bytes": 380988,
+      "sha256": "bbe1edcbf2d6c767191b95e58e59aec9fcdf029286d942380c43b07f379cbf68"
+    },
+    {
+      "code": "210000",
+      "name": "辽宁省",
+      "units": 100,
+      "bytes": 262876,
+      "sha256": "84b60eb265f29b520034ea1e147f99498a55b58f88bb80ebc0f82ce8289b4884"
+    },
+    {
+      "code": "220000",
+      "name": "吉林省",
+      "units": 60,
+      "bytes": 236135,
+      "sha256": "c5259f01d7cd24ec5dee496d2ed2dc7a7078a82a6d3d7b30483e95c60d25a16e"
+    },
+    {
+      "code": "230000",
+      "name": "黑龙江省",
+      "units": 122,
+      "bytes": 411720,
+      "sha256": "82d2418a89827f782b52618ae672c0ff9a56fae97d3ce3dafbf703b4b03c9dee"
+    },
+    {
+      "code": "310000",
+      "name": "上海市",
+      "units": 16,
+      "bytes": 22505,
+      "sha256": "7db7d908be968824166b24b8e85cb17e2f722f80144032e96b309485ebc3acea"
+    },
+    {
+      "code": "320000",
+      "name": "江苏省",
+      "units": 95,
+      "bytes": 179251,
+      "sha256": "27efa8cb6cf3477c78abacdfab0b3bea1e0ee4021b5911d01e59dcc269135fd1"
+    },
+    {
+      "code": "330000",
+      "name": "浙江省",
+      "units": 90,
+      "bytes": 227403,
+      "sha256": "311ed963b76902ec39afb3d284b91c66f8cab27d70f3c7349b00cdd36cd8cfe1"
+    },
+    {
+      "code": "340000",
+      "name": "安徽省",
+      "units": 104,
+      "bytes": 214681,
+      "sha256": "4995d021a4c117fb49ae720f87b019be6869a310b4c9631a0fbdd86fdfe92864"
+    },
+    {
+      "code": "350000",
+      "name": "福建省",
+      "units": 84,
+      "bytes": 226591,
+      "sha256": "dce5dd69164788b05ff24b02b7dbaf9180bd448b76d50a6357343b1ba3c47192"
+    },
+    {
+      "code": "360000",
+      "name": "江西省",
+      "units": 100,
+      "bytes": 268200,
+      "sha256": "95904b9e72e3f70949a8381e374010c02c51f0d77d622477cee424e1b252181c"
+    },
+    {
+      "code": "370000",
+      "name": "山东省",
+      "units": 136,
+      "bytes": 313952,
+      "sha256": "ca1955071fc14df93be3cd9c2bcd44e70b7ca6a6eddd8a5cb65ff547754e932b"
+    },
+    {
+      "code": "410000",
+      "name": "河南省",
+      "units": 157,
+      "bytes": 294907,
+      "sha256": "99eb601cf7c46fe8f11ec0f495af06c198edf492429e2e1ecfa3b4288af3c3fa"
+    },
+    {
+      "code": "420000",
+      "name": "湖北省",
+      "units": 103,
+      "bytes": 256604,
+      "sha256": "6f8a8585ae46b97b618cdd1f49a36d4f1fdee55aa9fb4ae15a5050078265d77b"
+    },
+    {
+      "code": "430000",
+      "name": "湖南省",
+      "units": 122,
+      "bytes": 330160,
+      "sha256": "199698662dbb0512898f9128b9c6145fb6a7dde3817c55690550d8a18af47068"
+    },
+    {
+      "code": "440000",
+      "name": "广东省",
+      "units": 124,
+      "bytes": 341943,
+      "sha256": "39137e49bafe8ffdf5a93fdddd6cd7ff9aab7c5274a4c34ec20a25f3bf263642"
+    },
+    {
+      "code": "450000",
+      "name": "广西壮族自治区",
+      "units": 111,
+      "bytes": 329605,
+      "sha256": "5ee2a429ae134cc200306389627761d426e9c6d5dafda92c23b121f16f6e50e8"
+    },
+    {
+      "code": "460000",
+      "name": "海南省",
+      "units": 26,
+      "bytes": 39002,
+      "sha256": "ef8f29e2a73b692eb12e1c6a962677ed3a2d0c2ea84e2ade1aa5c8f2ce352159"
+    },
+    {
+      "code": "500000",
+      "name": "重庆市",
+      "units": 38,
+      "bytes": 112403,
+      "sha256": "1f6852809b61792f5b2d46ca63c869d79321da0659834c8dcfb8b7863f3b3c94"
+    },
+    {
+      "code": "510000",
+      "name": "四川省",
+      "units": 183,
+      "bytes": 576901,
+      "sha256": "d4b7a36aea694a622047d8aa74165f7446f1ccc0eab0e7a4e2aaf229287ee9ba"
+    },
+    {
+      "code": "520000",
+      "name": "贵州省",
+      "units": 88,
+      "bytes": 238776,
+      "sha256": "37cfd856e5067b64460fa8dd2c25e77abdbf859d20122fa7a179dd4e0fc53064"
+    },
+    {
+      "code": "530000",
+      "name": "云南省",
+      "units": 129,
+      "bytes": 424064,
+      "sha256": "14f03c38cdaad48fb8ceac87e702554ba64521fc2d47ca90436586dd30146392"
+    },
+    {
+      "code": "540000",
+      "name": "西藏自治区",
+      "units": 74,
+      "bytes": 353248,
+      "sha256": "10d6df573f8ffd19e9b45fad269990718c701278e9fe22663e15cba7a5534430"
+    },
+    {
+      "code": "610000",
+      "name": "陕西省",
+      "units": 107,
+      "bytes": 262018,
+      "sha256": "b0ce68743bafee30d66b8f3beb2ecbec407b4ad970d4c25f236e042b6a507ceb"
+    },
+    {
+      "code": "620000",
+      "name": "甘肃省",
+      "units": 87,
+      "bytes": 286145,
+      "sha256": "169c2354c0896da419cc1867efce33020aed76598f855e15aad7c4ea9cca4bd6"
+    },
+    {
+      "code": "630000",
+      "name": "青海省",
+      "units": 45,
+      "bytes": 216467,
+      "sha256": "2b4ee76a996c00e04894397a0ea4d067386c45fcef28cd0a078801c31052f128"
+    },
+    {
+      "code": "640000",
+      "name": "宁夏回族自治区",
+      "units": 22,
+      "bytes": 60410,
+      "sha256": "8d2d3285140f68cacfcdd66b594ecb988a15a18d296a98e47e27e2db1126607c"
+    },
+    {
+      "code": "650000",
+      "name": "新疆维吾尔自治区",
+      "units": 106,
+      "bytes": 383676,
+      "sha256": "ec4421266db5e2cdda921a7b0b3abf0eaeadf70f69ea8422d485794fbf493427"
+    },
+    {
+      "code": "710000",
+      "name": "台湾省",
+      "units": 22,
+      "bytes": 27090,
+      "sha256": "e4a80c881f20d205025cd1940a55ca2223df7feb6275f364fee1034a46b845da"
+    },
+    {
+      "code": "810000",
+      "name": "香港特别行政区",
+      "units": 1,
+      "bytes": 1732,
+      "sha256": "027b4eeb2934459ca374742ce2de184ed9f98955279ee257a51e0265bed78728"
+    },
+    {
+      "code": "820000",
+      "name": "澳门特别行政区",
+      "units": 1,
+      "bytes": 545,
+      "sha256": "58b82e9641d72217c260b93543b1f8e2789a74ef026d2b942659bfd7ef16b558"
+    }
+  ],
+  "simplificationToleranceDegrees": 0.003,
+  "simplification": "Topology-preserving: rings are cut into chains at shared vertices, each unique chain is simplified once and stitched back into every county that uses it, so borders never cross.",
+  "coverage": "District / county / county-level city units per province; units without child geometry fall back to the parent city outline.",
+  "purpose": "Course travel visualization, not navigation, surveying or legal boundary determination.",
+  "attribution": [
+    "DataV.GeoAtlas (https://geo.datav.aliyun.com/areas_v3/bound/), geographic material from Amap Open Platform, for learning/exchange.",
+    "Taiwan / Hong Kong / Macao reuse the county-sized units of china-cities.json."
+  ],
+  "errors": [
+    "441900: HTTP Error 404: Not Found",
+    "429005: HTTP Error 404: Not Found",
+    "429006: HTTP Error 404: Not Found",
+    "442000: HTTP Error 404: Not Found",
+    "460400: HTTP Error 404: Not Found",
+    "429021: HTTP Error 404: Not Found",
+    "429004: HTTP Error 404: Not Found",
+    "419001: HTTP Error 404: Not Found",
+    "469002: HTTP Error 404: Not Found",
+    "469005: HTTP Error 404: Not Found",
+    "469021: HTTP Error 404: Not Found",
+    "469001: HTTP Error 404: Not Found",
+    "469007: HTTP Error 404: Not Found",
+    "469022: HTTP Error 404: Not Found",
+    "469006: HTTP Error 404: Not Found",
+    "469023: HTTP Error 404: Not Found",
+    "469024: HTTP Error 404: Not Found",
+    "469025: HTTP Error 404: Not Found",
+    "469026: HTTP Error 404: Not Found",
+    "469028: HTTP Error 404: Not Found",
+    "469027: HTTP Error 404: Not Found",
+    "469029: HTTP Error 404: Not Found",
+    "469030: HTTP Error 404: Not Found",
+    "620200: HTTP Error 404: Not Found",
+    "659004: HTTP Error 404: Not Found",
+    "659005: HTTP Error 404: Not Found",
+    "659002: HTTP Error 404: Not Found",
+    "659003: HTTP Error 404: Not Found",
+    "659007: HTTP Error 404: Not Found",
+    "659001: HTTP Error 404: Not Found",
+    "659006: HTTP Error 404: Not Found",
+    "659008: HTTP Error 404: Not Found",
+    "659009: HTTP Error 404: Not Found",
+    "659010: HTTP Error 404: Not Found"
+  ]
+}

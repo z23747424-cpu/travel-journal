@@ -32,6 +32,23 @@ class JournalRepository(context: Context) : AutoCloseable {
     @Synchronized fun journals(): List<Journal> = readRows("journals", ::journalFromJson)
         .sortedWith(compareByDescending<Journal> { it.date }.thenByDescending { it.updatedAt })
 
+    /**
+     * 「找回一个瞬间」页的自定义背景。图片被复制到私有目录里的单个文件，
+     * 不再依赖外部相册的授权；没有背景时界面继续用自带的太阳与山动画。
+     */
+    private fun searchBackgroundFile() = File(app.filesDir, "search-background.img")
+    @Synchronized fun searchBackground(): File? = searchBackgroundFile().takeIf { it.isFile && it.length() > 0 }
+    @Synchronized fun setSearchBackground(uri: Uri): File {
+        val name = importPhoto(uri)
+        val source = photoFile(name)
+        val target = searchBackgroundFile()
+        source.copyTo(target, overwrite = true)
+        require(target.isFile && target.length() > 0) { "背景图片保存失败" }
+        source.delete()
+        return target
+    }
+    @Synchronized fun clearSearchBackground() { searchBackgroundFile().delete() }
+
     @Synchronized fun saveJournal(j: Journal) {
         validateJournal(j)
         require(j.wishId == null || wishes().any { it.id == j.wishId }) { "关联的收藏已不存在，请重新选择" }
@@ -67,6 +84,25 @@ class JournalRepository(context: Context) : AutoCloseable {
     }
 
     @Synchronized fun wishes(): List<Wish> = readRows("wishes", ::wishFromJson).sortedByDescending { it.createdAt }
+
+    @Synchronized fun plans():List<TravelPlan> = readRows("plans",::planFromJson).sortedByDescending{it.updatedAt}
+    @Synchronized fun savePlan(plan:TravelPlan){
+        validateTravelPlan(plan)
+        transaction{put("plans",plan.id,planJson(plan));if(loadPlanDraft()?.id==plan.id)helper.writableDatabase.delete("plan_draft","id=?",arrayOf("current"))}
+    }
+    @Synchronized fun deletePlan(id:String){transaction{helper.writableDatabase.delete("plans","id=?",arrayOf(id));if(loadPlanDraft()?.id==id)helper.writableDatabase.delete("plan_draft","id=?",arrayOf("current"))}}
+    @Synchronized fun loadPlanDraft():TravelPlan? = readRows("plan_draft",::planFromJson).firstOrNull()
+    @Synchronized fun savePlanDraft(plan:TravelPlan){validateTravelPlan(plan,draft=true);put("plan_draft","current",planJson(plan))}
+    @Synchronized fun clearPlanDraft(){helper.writableDatabase.delete("plan_draft","id=?",arrayOf("current"))}
+    @Synchronized fun provinceDesigns():List<ProvinceDesign> = readRows("province_designs",::provinceDesignFromJson)
+    @Synchronized fun saveProvinceDesign(design:ProvinceDesign){
+        validateProvinceDesign(design)
+        val files=design.photos+listOfNotNull(design.marker.image)
+        require(files.all{photoFile(it).isFile}){"设计中的照片缺失，请重新选择"}
+        val previous=provinceDesigns().find{it.provinceCode==design.provinceCode}
+        put("province_designs",design.provinceCode,provinceDesignJson(design))
+        cleanupPhotos(previous?.photos.orEmpty()+listOfNotNull(previous?.marker?.image))
+    }
 
     @Synchronized fun saveWish(w: Wish) {
         validateWish(w)
@@ -138,20 +174,13 @@ class JournalRepository(context: Context) : AutoCloseable {
             cipher.init(Cipher.DECRYPT_MODE, encryptionKey(), GCMParameterSpec(128, Base64.decode(preferences.getString("iv", ""), Base64.NO_WRAP)))
             String(cipher.doFinal(Base64.decode(cipherText, Base64.NO_WRAP)), Charsets.UTF_8)
         } catch (_: Exception) { throw IllegalStateException("设备无法解密已保存的密钥，请清除密钥并重新填写") }
-        val searchCipherText=preferences.getString("searchCiphertext", "").orEmpty()
-        val searchKey=if(searchCipherText.isBlank()) "" else try {
-            val cipher=Cipher.getInstance("AES/GCM/NoPadding")
-            cipher.init(Cipher.DECRYPT_MODE,encryptionKey(),GCMParameterSpec(128,Base64.decode(preferences.getString("searchIv",""),Base64.NO_WRAP)))
-            String(cipher.doFinal(Base64.decode(searchCipherText,Base64.NO_WRAP)),Charsets.UTF_8)
-        }catch(_:Exception){throw IllegalStateException("设备无法解密搜索密钥，请清除密钥并重新填写")}
         return AiConfig(preferences.getString("baseUrl", "").orEmpty(), apiKey,
-            preferences.getString("model", "").orEmpty(), preferences.getString("spiritName", "").orEmpty(), preferences.getBoolean("consent", false),searchKey)
+            preferences.getString("model", "").orEmpty(), preferences.getString("spiritName", "").orEmpty(), preferences.getBoolean("consent", false))
     }
 
     @Synchronized fun saveConfig(c: AiConfig) {
-        require(c.model.length <= 200 && c.spiritName.length <= 80 && c.apiKey.length <= 8192 && c.searchApiKey.length<=8192) { "AI 配置过长" }
+        require(c.model.length <= 200 && c.spiritName.length <= 80 && c.apiKey.length <= 8192) { "AI 配置过长" }
         require(!c.apiKey.contains('\n') && !c.apiKey.contains('\r')) { "密钥不能包含换行" }
-        require(!c.searchApiKey.contains('\n') && !c.searchApiKey.contains('\r')) { "搜索密钥不能包含换行" }
         val endpoint = if (c.baseUrl.isBlank()) "" else normalizeEndpoint(c.baseUrl)
         val editor = preferences.edit().putString("baseUrl", endpoint).putString("model", c.model.trim())
             .putString("spiritName", c.spiritName.trim()).putBoolean("consent", c.consent)
@@ -164,32 +193,38 @@ class JournalRepository(context: Context) : AutoCloseable {
                     .putString("ciphertext", Base64.encodeToString(encrypted, Base64.NO_WRAP))
             } catch (_: Exception) { throw IllegalStateException("设备安全存储不可用，密钥未保存") }
         }
-        if(c.searchApiKey.isBlank())editor.remove("searchIv").remove("searchCiphertext")else {
-            try {
-                val cipher=Cipher.getInstance("AES/GCM/NoPadding")
-                cipher.init(Cipher.ENCRYPT_MODE,encryptionKey())
-                val encrypted=cipher.doFinal(c.searchApiKey.trim().toByteArray(Charsets.UTF_8))
-                editor.putString("searchIv",Base64.encodeToString(cipher.iv,Base64.NO_WRAP)).putString("searchCiphertext",Base64.encodeToString(encrypted,Base64.NO_WRAP))
-            }catch(_:Exception){throw IllegalStateException("设备安全存储不可用，搜索密钥未保存")}
-        }
+        // 1.7.0 起移除 Tavily 联网搜索，顺手清掉历史遗留的搜索密钥。
+        editor.remove("searchIv").remove("searchCiphertext")
         check(editor.commit()) { "配置保存失败，请检查存储空间" }
     }
 
+    /** 地图设置：小省份（北京、上海、天津、港澳）放大到最大倍数时是否直接进省。 */
+    @Synchronized fun enterProvinceAtMaxZoom(): Boolean = preferences.getBoolean("mapEnterAtMaxZoom", true)
+
+    @Synchronized fun saveEnterProvinceAtMaxZoom(on: Boolean) {
+        check(preferences.edit().putBoolean("mapEnterAtMaxZoom", on).commit()) { "设置保存失败，请检查存储空间" }
+    }
+
     @Synchronized fun exportBackup(out: OutputStream) {
-        try { writeBackup(out, journals(), wishes(), ::photoFile) }
+        try { writeBackupBundle(out, journals(), wishes(),plans(),provinceDesigns(), ::photoFile) }
         catch (_: java.io.IOException) { throw IllegalStateException("备份写入失败，请检查目标文件位置和剩余空间") }
     }
 
-    @Synchronized fun importBackup(input: InputStream): Int = readBackup(input, app.cacheDir) { entries, wishes, photos ->
+    @Synchronized fun importBackup(input: InputStream): Int = readBackupBundle(input, app.cacheDir) { entries, wishes, plans,designs,photos ->
         val journalIds = journals().map { it.id }.toMutableSet()
         val wishIds = this.wishes().map { it.id }.toMutableSet()
         val journalMap = entries.associate { it.id to newIdIfNeeded(it.id, journalIds) }
         val wishMap = wishes.associate { it.id to newIdIfNeeded(it.id, wishIds) }
+        val planIds=this.plans().map{it.id}.toMutableSet()
+        val planMap=plans.associate{it.id to newIdIfNeeded(it.id,planIds)}
+        val designCodes=provinceDesigns().map{it.provinceCode}.toSet()
+        val acceptedDesigns=designs.filterNot{it.provinceCode in designCodes}
+        val needed=(entries.flatMap{it.photos}+acceptedDesigns.flatMap{it.photos+listOfNotNull(it.marker.image)}).toSet()
         val reserved = mutableSetOf<String>()
-        val photoMap = photos.keys.associateWith { unusedPhotoName(it.substringAfterLast('.'), reserved).also { name -> reserved.add(name) } }
+        val photoMap = photos.keys.filter{it in needed}.associateWith { unusedPhotoName(it.substringAfterLast('.'), reserved).also { name -> reserved.add(name) } }
         val copied = mutableListOf<File>()
         try {
-            photos.forEach { (name, source) ->
+            photos.filterKeys{it in needed}.forEach { (name, source) ->
                 val target = photoFile(photoMap.getValue(name))
                 check(target.createNewFile()) { "导入照片文件名冲突，请重试" }
                 copied += target
@@ -204,6 +239,8 @@ class JournalRepository(context: Context) : AutoCloseable {
                     val imported = wish.copy(id = wishMap.getValue(wish.id), journalId = wish.journalId?.let(journalMap::getValue))
                     put("wishes", imported.id, wishJson(imported))
                 }
+                plans.forEach{plan->val imported=plan.copy(id=planMap.getValue(plan.id));put("plans",imported.id,planJson(imported))}
+                acceptedDesigns.forEach{d->val imported=d.copy(photos=d.photos.map(photoMap::getValue),marker=d.marker.copy(image=d.marker.image?.let(photoMap::getValue)));put("province_designs",imported.provinceCode,provinceDesignJson(imported))}
             }
             entries.size
         } catch (failure: Throwable) { copied.forEach { it.delete() }; throw failure }
@@ -229,8 +266,20 @@ class JournalRepository(context: Context) : AutoCloseable {
 
     private fun cleanupPhotos(candidates: Collection<String>) {
         if (candidates.isEmpty()) return
-        val referenced = journals().flatMap { it.photos }.toSet() + loadDraft()?.photos.orEmpty()
+        val referenced = journals().flatMap { it.photos }.toSet() + loadDraft()?.photos.orEmpty()+provinceDesigns().flatMap{it.photos+listOfNotNull(it.marker.image)}
         candidates.filterNot(referenced::contains).forEach { photoFile(it).delete() }
+    }
+
+    /** Only copied, unreferenced files in this app's private photo directory are removed. */
+    @Synchronized fun discardUnusedPhotos(candidates:Collection<String>){
+        require(candidates.all{PHOTO_NAME.matches(it)}){"照片文件名无效"}
+        cleanupPhotos(candidates)
+    }
+    @Synchronized fun purgeUnusedPhotos(restoredDraftPhotos:Collection<String> = emptyList()){
+        require(restoredDraftPhotos.all{PHOTO_NAME.matches(it)}){"草稿照片文件名无效"}
+        // Saved instance state may hold a newer photo selection than the last disk autosave.
+        cleanupPhotos(photoDir.listFiles().orEmpty().filter{it.isFile&&PHOTO_NAME.matches(it.name)&&it.name !in restoredDraftPhotos}.map{it.name})
+        photoDir.listFiles().orEmpty().filter{it.isFile&&Regex("[0-9a-fA-F-]{36}\\.tmp").matches(it.name)}.forEach{it.delete()}
     }
 
     private fun unusedPhotoName(extension: String, reserved: Set<String> = emptySet()): String {
@@ -250,11 +299,11 @@ class JournalRepository(context: Context) : AutoCloseable {
     }
 }
 
-private class JournalDatabase(context: Context) : SQLiteOpenHelper(context, "travel-journal.db", null, 1) {
+private class JournalDatabase(context: Context) : SQLiteOpenHelper(context, "travel-journal.db", null, 2) {
     override fun onCreate(db: SQLiteDatabase) {
-        listOf("journals", "wishes", "draft").forEach { db.execSQL("CREATE TABLE $it (id TEXT PRIMARY KEY NOT NULL, payload TEXT NOT NULL)") }
+        listOf("journals", "wishes", "draft","plans","plan_draft","province_designs").forEach { db.execSQL("CREATE TABLE $it (id TEXT PRIMARY KEY NOT NULL, payload TEXT NOT NULL)") }
     }
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) { error("不支持的数据版本，请保留备份") }
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) { if(oldVersion<2)listOf("plans","plan_draft","province_designs").forEach{db.execSQL("CREATE TABLE IF NOT EXISTS $it (id TEXT PRIMARY KEY NOT NULL,payload TEXT NOT NULL)")} }
 }
 
 internal val PHOTO_NAME = Regex("[A-Za-z0-9_-]{1,100}\\.(jpg|jpeg|png|webp|heic|heif)")
@@ -294,10 +343,13 @@ private fun newIdIfNeeded(id: String, used: MutableSet<String>): String {
 
 internal fun validateJournal(j: Journal, draft: Boolean = false) {
     require(j.id.isNotBlank() && j.id.length <= 128) { "记录 ID 无效" }
-    require(draft || j.title.isNotBlank()) { "请填写标题" }
+    require(j.provinceCode==null||j.provinceCode in PROVINCE_CODES){"请选择有效的省份"}
+    require(j.city.length<=120){"城市名称过长"}
     require(draft || j.body.isNotBlank() || j.photos.isNotEmpty()) { "请至少填写正文或选择照片" }
     require(j.title.length <= 200 && j.place.length <= 300 && j.body.length <= 100_000 && j.photoDescription.length <= 5000 && j.date.length <= 20) { "记录内容过长" }
-    require(j.photos.size <= 12 && j.photos.distinct().size == j.photos.size && j.photos.all(PHOTO_NAME::matches)) { "每篇最多 12 张不同照片" }
+    // 不再限制 12 张：旅途照片想放多少放多少。仍要求名字不重复，避免封面 / 备份引用歧义。
+    require(j.photos.distinct().size == j.photos.size && j.photos.all(PHOTO_NAME::matches)) { "照片名称重复或无效" }
+    require(j.coverPhoto == null || j.coverPhoto in j.photos) { "封面必须是这篇手账里的照片" }
     require(j.tags.size <= 24 && j.tags.all { it.length <= 80 }) { "标签过多或过长" }
     require(j.createdAt >= 0 && j.updatedAt >= 0) { "记录时间无效" }
     require(j.wishId == null || j.wishId.isNotBlank() && j.wishId.length <= 128) { "收藏关联无效" }

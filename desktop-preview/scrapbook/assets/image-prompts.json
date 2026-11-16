@@ -1,0 +1,31 @@
+{
+  "tool": "image_gen__imagegen",
+  "date": "2026-11-08",
+  "approvedReference": "design-previews/scrapbook-v01/旅页-手账手绘三屏-v02.png",
+  "assets": [
+    {
+      "name": "paper.png",
+      "alpha": false,
+      "prompt": "Extract and recreate ONLY the blank warm ivory paper material from the approved travel scrapbook UI reference. Produce one square seamless texture tile, 1024x1024, completely flat evenly lit warm ivory #F7F3EA with extremely subtle fine paper fibers, refined clean diary paper. Full bleed opaque paper. No text, lines, objects, drawings, tape, borders, shadows, stains or gradients. Almost white, calm, the grain must not reduce small text readability. This is a production background texture, not a UI screenshot.",
+      "source": "C:\\Users\\ASUS\\.codex\\generated_images\\01a1a5c8-9969-7683-a017-ea7f4d5f63ca\\exec-e46ba43e-79d5-4442-aa86-99b29e3838e5.png"
+    },
+    {
+      "name": "decor.png",
+      "alpha": true,
+      "prompt": "Extract and redraw the decorative materials from the approved 旅页 scrapbook reference as a production PNG sprite atlas on TRUE TRANSPARENT background. Square canvas, exactly four equal quadrants with generous transparent gutters and no overlap. TOP LEFT: one elegant sage-green hand-painted willow branch hanging from the upper-right, fine delicate ink and watercolor leaves. TOP RIGHT: a very pale sage ink-wash panorama of distant Chinese hills, low wide horizontal composition. BOTTOM LEFT: one horizontal translucent pale sage washi tape strip, fibrous paper, delicately irregular torn edges, approximately 4:1 aspect, centered. BOTTOM RIGHT: one fine hand-drawn golden ginkgo leaf with a slender curved stem, no text. Each quadrant's motif isolated and centered with clear transparent margins, each fits entirely inside its own quadrant. Preserve the reference's subtle, sophisticated diary sketch character. No checkerboard painted into the image, no UI, letters, logos, additional objects or background. Native alpha transparency.",
+      "source": "C:\\Users\\ASUS\\.codex\\generated_images\\01a1a5c8-9969-7683-a017-ea7f4d5f63ca\\exec-c9a1c4b6-288f-404e-8ef7-b2d3caecd9bd.png"
+    },
+    {
+      "name": "lake.jpg.png",
+      "alpha": false,
+      "prompt": "Extract and faithfully recreate as a standalone wide 3:2 editorial travel photograph the quiet willow-and-lake pavilion scene shown in the approved reference's MIDDLE screen. A tranquil Hangzhou-style lake, elegant traditional pavilion on the right, trailing green willow leaves in the foreground upper edge, distant green hills and a small pagoda, shimmering calm blue-green water, soft warm late-afternoon daylight. Natural detailed photographic texture, serene composition, not watercolor. Fill the entire image with the photograph only: no paper border, tape, writing, interface, frame, watermark or logos. This is a clearly labeled sample photo for a local travel journal prototype, not evidence of a user's trip.",
+      "source": "C:\\Users\\ASUS\\.codex\\generated_images\\01a1a5c8-9969-7683-a017-ea7f4d5f63ca\\exec-14c8f261-b1f2-4ee0-962d-57abd10fef33.png"
+    },
+    {
+      "name": "street.jpg.png",
+      "alpha": false,
+      "prompt": "Extract and faithfully recreate as a standalone wide 3:2 editorial travel photograph the quiet Jiangnan old-street scene in the approved reference's MIDDLE screen lower photo. An intimate pedestrian lane with white plaster walls, dark timber shopfronts and roof tiles, one small red lantern, soft green trees casting dappled warm light, a few potted plants, no crowds. Natural convincing travel photography, rich but restrained olive/wood/cream colors, beautiful late-afternoon light. Fill the image with photograph only, no paper border, tape, typography, interface, watermark, branding or extra objects. Clearly labeled sample imagery for a diary prototype.",
+      "source": "C:\\Users\\ASUS\\.codex\\generated_images\\01a1a5c8-9969-7683-a017-ea7f4d5f63ca\\exec-2208aa4c-e583-40db-a0fd-9c1ea4c4dca8.png"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+The native scrapbook_handwriting.ttf is an outline-preserving conversion of the approved desktop-preview/scrapbook/assets/handwriting.woff2 Ma Shan Zheng UI subset, using fontTools 4.38.0 and Brotli 1.2.1. It contains 511 mapped codepoints; other characters use Android font fallback. See handwriting-source.json and handwriting-OFL.txt for original source and license.

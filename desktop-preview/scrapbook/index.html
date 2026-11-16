@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f7f3ea"><title>旅页 · 把旅途写进日记</title><link rel="stylesheet" href="style.css"><script type="module" src="app.js"></script></head>
+<body>
+<main class="workspace">
+  <aside class="preview-notes"><a class="preview-brand" href="/">旅页</a><h1>把走过的地方，<br>留成回忆。</h1><p>一张属于你的省份地图，<br>一本慢慢写满的旅行日记。</p><div class="preview-controls"><button id="phone-size" class="chosen">手机</button><button id="tablet-size">宽屏</button></div><button id="load-demo" class="preview-demo">看看示例手账</button><p class="preview-disclosure">电脑交互原型 · 内容保存在当前浏览器<br>示例照片为生成素材，与手机数据分开。</p><a class="old-preview" href="http://127.0.0.1:8766/" target="_blank" rel="noopener">旧版预览（需先启动）</a></aside>
+  <section class="device" aria-label="旅页交互原型"><div class="statusbar" aria-hidden="true"><span id="clock">10:24</span><span class="status-bars">● ▰</span></div><div id="screen" class="screen" aria-live="off"><div class="loading">正在翻开你的旅行日记…</div></div><nav id="navigation" class="navigation" aria-label="主导航"></nav></section>
+</main>
+<div id="toast" class="toast" role="status" hidden></div>
+<dialog id="dialog" class="paper-dialog"><div id="dialog-content"></div></dialog>
+<input id="photo-picker" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden><input id="backup-picker" type="file" accept="application/json,.json" hidden>
+</body></html>

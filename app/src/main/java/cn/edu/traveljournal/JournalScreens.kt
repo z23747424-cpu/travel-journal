@@ -16,6 +16,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.*
@@ -44,12 +45,12 @@ import kotlin.math.roundToInt
 
 @Composable fun JournalCard(journal: Journal, repo: JournalRepository, reason: String = "", onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth().clickable(onClick=onClick),verticalArrangement=Arrangement.spacedBy(10.dp)) {
-        if(journal.photos.isNotEmpty()) LocalPhoto(repo.photoFile(journal.photos.first()),journal.title,Modifier.fillMaxWidth().aspectRatio(1.45f))
+        if(journal.photos.isNotEmpty()) LocalPhoto(repo.photoFile(journalCover(journal)!!),journal.title,Modifier.fillMaxWidth().aspectRatio(1.45f))
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
-            Text(journal.place.ifBlank{"未填写地点"},modifier=Modifier.weight(1f).padding(end=12.dp),maxLines=1,overflow=TextOverflow.Ellipsis,color=MaterialTheme.colorScheme.primary, style=MaterialTheme.typography.labelLarge)
+            Text(journalLocationLabel(journal),modifier=Modifier.weight(1f).padding(end=12.dp),maxLines=1,overflow=TextOverflow.Ellipsis,color=MaterialTheme.colorScheme.primary, style=MaterialTheme.typography.labelLarge)
             Text(journal.date,style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Text(journal.title,style=MaterialTheme.typography.headlineSmall)
+        Text(journalDisplayTitle(journal),style=MaterialTheme.typography.headlineSmall)
         if(journal.body.isNotBlank()) Text(journal.body,maxLines=2,overflow=TextOverflow.Ellipsis,style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
         if(reason.isNotBlank()) Text(reason,style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.primary)
         TagRow(journal.tags.take(4))
@@ -72,17 +73,17 @@ import kotlin.math.roundToInt
             TextButton(onClick=onEdit) { Text("编辑") }
             IconButton(onClick={delete=true}) { Icon(Icons.Outlined.DeleteOutline,"删除手账") }
         } }
-        if(journal.photos.isNotEmpty()) item { LocalPhoto(repo.photoFile(journal.photos.first()),journal.title,Modifier.fillMaxWidth().height(300.dp).clickable{fullPhoto=journal.photos.first()}) }
+        if(journal.photos.isNotEmpty()) item { val cover=journalCover(journal)!!;LocalPhoto(repo.photoFile(cover),journal.title,Modifier.fillMaxWidth().height(300.dp).clickable{fullPhoto=cover}) }
         item { Column(Modifier.padding(horizontal=24.dp),verticalArrangement=Arrangement.spacedBy(14.dp)) {
-            Text(journal.title,style=MaterialTheme.typography.headlineLarge)
-            Text("${journal.date}  ·  ${journal.place.ifBlank{"旅途中的一站"}}",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.primary)
+            Text(journalDisplayTitle(journal),style=MaterialTheme.typography.headlineLarge)
+            Text("${journal.date}  ·  ${journalLocationLabel(journal)}",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.primary)
             journal.mapPoint()?.let{point->Text("地图位置 · ${point.label()}",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant);if(onNewHere!=null)TextButton(onClick=onNewHere){Text("在这里再写一篇")}}
             TagRow(listOf(if(journal.visited)"去过" else "未去过")+journal.tags)
             if(journal.body.isNotBlank()) Text(journal.body,style=MaterialTheme.typography.bodyLarge)
         } }
-        items(journal.photos.drop(1)) { photo -> LocalPhoto(repo.photoFile(photo),"旅行照片",Modifier.fillMaxWidth().padding(horizontal=24.dp).height(280.dp).clickable{fullPhoto=photo}) }
+        items(journal.photos.filterNot{it==journalCover(journal)}) { photo -> LocalPhoto(repo.photoFile(photo),"旅行照片",Modifier.fillMaxWidth().padding(horizontal=24.dp).height(280.dp).clickable{fullPhoto=photo}) }
         if(journal.photoDescription.isNotBlank()) item { Column(Modifier.padding(horizontal=24.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-            HorizontalDivider(); Text("照片笔记",style=MaterialTheme.typography.titleMedium)
+            HorizontalDivider(); Text("照片笔记",style=MaterialTheme.typography.titleLarge)
             Text(journal.photoDescription,style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
         } }
         item { Column(Modifier.padding(horizontal=24.dp)) {
@@ -117,7 +118,6 @@ import kotlin.math.roundToInt
     var tagsText by remember(draft.id) { mutableStateOf(draft.tags.joinToString("，")) }
     var selectedForAi by remember { mutableStateOf<Set<String>>(emptySet()) }
     var showPhoto by remember { mutableStateOf<String?>(null) }
-    var mapPicker by rememberSaveable { mutableStateOf(false) }
     DisposableEffect(Unit) { onDispose { aiTask?.cancel() } }
     val latestDraft by rememberUpdatedState(draft)
     BackHandler(enabled=importing){onError("照片正在导入，请稍候")}
@@ -125,46 +125,38 @@ import kotlin.math.roundToInt
         if(uris.isNotEmpty()) scope.launch {
             importing=true
             try {
-                val room=(12-latestDraft.photos.size).coerceAtLeast(0)
-                val imported=withContext(Dispatchers.IO){uris.take(room).mapNotNull{uri->runCatching{repo.importPhoto(uri)}.getOrNull()}}
-                val updated=latestDraft.copy(photos=(latestDraft.photos+imported).take(12))
+                val imported=withContext(Dispatchers.IO){uris.mapNotNull{uri->runCatching{repo.importPhoto(uri)}.getOrNull()}}
+                val updated=latestDraft.copy(photos=latestDraft.photos+imported)
                 onChange(updated)
                 withContext(Dispatchers.IO){repo.saveDraft(updated)}
-                if(imported.size<uris.take(room).size)onError("部分照片无法读取，已保留成功导入的照片")
-                if(uris.size>room) onError("每篇最多保存12张照片，已导入可添加的部分")
+                if(imported.size<uris.size)onError("部分照片无法读取，已保留成功导入的照片")
             } catch(e:Exception){onError(e.message?:"照片导入失败，请重试")}
             finally {importing=false}
         }
     }
-    LazyColumn(Modifier.fillMaxSize().imePadding(),contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(18.dp)) {
+    LazyColumn(Modifier.fillMaxSize().imePadding().testTag("journal-editor"),contentPadding=PaddingValues(24.dp),verticalArrangement=Arrangement.spacedBy(18.dp)) {
         item { Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
             IconButton(onClick=onBack,enabled=!importing&&!saving){Icon(Icons.Outlined.ArrowBack,"返回")}
-            Text("写下这一程",style=MaterialTheme.typography.titleLarge,modifier=Modifier.weight(1f))
+            Text("记一笔",style=MaterialTheme.typography.titleLarge,modifier=Modifier.weight(1f))
             Button(onClick=onSave,enabled=!saving&&!importing){Text(if(saving)"保存中" else "保存")}
         } }
-        item { OutlinedTextField(draft.title,{onChange(draft.copy(title=it))},label={Text("手账标题")},placeholder={Text("给这段旅程起个名字")},modifier=Modifier.fillMaxWidth(),singleLine=true) }
+        item { OutlinedTextField(draft.title,{onChange(draft.copy(title=it))},label={Text("手账标题（选填）")},placeholder={Text("给这段旅程起个名字")},modifier=Modifier.fillMaxWidth(),singleLine=true) }
         item { Row(horizontalArrangement=Arrangement.spacedBy(10.dp)) {
             OutlinedButton(onClick={
                 val date=runCatching{LocalDate.parse(draft.date)}.getOrDefault(LocalDate.now())
                 DatePickerDialog(context,{_,y,m,d->onChange(latestDraft.copy(date=LocalDate.of(y,m+1,d).toString()))},date.year,date.monthValue-1,date.dayOfMonth).show()
             }){Icon(Icons.Outlined.CalendarToday,null,Modifier.size(18.dp));Spacer(Modifier.width(8.dp));Text(draft.date)}
         } }
-        item { OutlinedTextField(draft.place,{onChange(draft.copy(place=it))},label={Text("地点（可选）")},modifier=Modifier.fillMaxWidth(),singleLine=true) }
+        item { Column(verticalArrangement=Arrangement.spacedBy(8.dp)) { Text("把这一程安放在",style=MaterialTheme.typography.labelLarge);ProvinceSelector(draft.provinceCode,{onChange(draft.copy(provinceCode=it))},allowNone=false) } }
+        item { OutlinedTextField(draft.city,{onChange(draft.copy(city=it.take(120)))},label={Text("城市（选填）")},modifier=Modifier.fillMaxWidth(),singleLine=true) }
+        item { OutlinedTextField(draft.place,{onChange(draft.copy(place=it.take(300)))},label={Text("具体地点（选填）")},modifier=Modifier.fillMaxWidth(),singleLine=true) }
         item { Row(horizontalArrangement=Arrangement.spacedBy(10.dp)) {
             FilterChip(selected=draft.visited,onClick={onChange(draft.copy(visited=true))},label={Text("去过 · 点亮地图")})
-            FilterChip(selected=!draft.visited,onClick={onChange(draft.copy(visited=false))},label={Text("想去 · 插旗")})
+            FilterChip(selected=!draft.visited,onClick={onChange(draft.copy(visited=false))},label={Text("计划 · 插旗")})
         } }
-        item { Column {
-            draft.mapPoint()?.let{Text("已标地图位置 · ${it.label()}",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)}
-            Row {
-                TextButton(onClick={mapPicker=true},enabled=!saving&&!importing){TravelIcon(R.drawable.ic_lvye_map_pin,null);Spacer(Modifier.width(6.dp));Text(if(draft.mapPoint()==null)"在地图选点" else "更改地图位置")}
-                if(draft.mapPoint()!=null)TextButton(onClick={onChange(draft.copy(latitude=null,longitude=null,mapCityCode=null))},enabled=!saving&&!importing){Text("移除标注")}
-            }
-        } }
-        if(draft.visited) item { MapStyleControls(draft.mapFillColor,draft.mapFillMode,draft.photos.isNotEmpty(),{onChange(draft.copy(mapFillColor=it))},{onChange(draft.copy(mapFillMode=it))}) }
         item { Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
-            Text("旅途照片  ${draft.photos.size}/12",style=MaterialTheme.typography.titleMedium)
-            TextButton(onClick={picker.launch(arrayOf("image/*"))},enabled=!importing&&draft.photos.size<12){Icon(Icons.Outlined.AddPhotoAlternate,null);Spacer(Modifier.width(6.dp));Text(if(importing)"导入中" else "添加照片")}
+            Text("旅途照片  ${draft.photos.size} 张",style=MaterialTheme.typography.titleLarge)
+            TextButton(onClick={picker.launch(arrayOf("image/*"))},enabled=!importing){Icon(Icons.Outlined.AddPhotoAlternate,null);Spacer(Modifier.width(6.dp));Text(if(importing)"导入中" else "添加照片")}
         } }
         if(draft.photos.isEmpty()) item { Text("可以先写文字，随时回来补上照片。",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant) }
         items(draft.photos,key={it}) { photo -> Column(verticalArrangement=Arrangement.spacedBy(6.dp)) {
@@ -177,18 +169,11 @@ import kotlin.math.roundToInt
                 })
                 Text("交给精灵",style=MaterialTheme.typography.labelMedium)
                 Spacer(Modifier.weight(1f))
-                TextButton(onClick={onChange(draft.copy(photos=listOf(photo)+draft.photos.filterNot{it==photo}))}){Text(if(draft.photos.first()==photo)"封面" else "设为封面")}
+                TextButton(onClick={onChange(draft.copy(coverPhoto=photo))}){Text(if(journalCover(draft)==photo)"封面" else "设为封面")}
                 IconButton(enabled=draft.photos.indexOf(photo)>0,onClick={
                     val p=draft.photos.toMutableList();val i=p.indexOf(photo);if(i>0){p[i]=p[i-1];p[i-1]=photo;onChange(draft.copy(photos=p))}
                 }){Icon(Icons.Outlined.ArrowUpward,"前移照片",Modifier.size(20.dp))}
-                IconButton(onClick={selectedForAi=selectedForAi-photo;onChange(draft.copy(photos=draft.photos-photo,mapSticker=draft.mapSticker.takeUnless{it==photo}))}){Icon(Icons.Outlined.Close,"移除照片")}
-            }
-            TextButton(onClick={onChange(draft.copy(mapSticker=if(draft.mapSticker==photo)null else photo))}){
-                TravelIcon(if(draft.mapSticker==photo)R.drawable.ic_lvye_check else R.drawable.ic_lvye_map_pin,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp));Text(if(draft.mapSticker==photo)"取消这张地图插画" else "用这张图片作地图插画")
-            }
-            if(draft.mapSticker==photo)Column {
-                Text(if(draft.mapPoint()!=null)"插画大小 · 全国视野自动缩小，放大后显示设定尺寸" else "补充地图位置后，这张插画会显示在地图上",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                Slider(value=draft.mapStickerSize.coerceIn(24,96).toFloat(),onValueChange={onChange(draft.copy(mapStickerSize=it.roundToInt()))},valueRange=24f..96f,steps=8)
+                IconButton(onClick={selectedForAi=selectedForAi-photo;onChange(draft.copy(photos=draft.photos-photo,mapSticker=draft.mapSticker.takeUnless{it==photo},coverPhoto=draft.coverPhoto.takeUnless{it==photo}))}){Icon(Icons.Outlined.Close,"移除照片")}
             }
         } }
         item { OutlinedTextField(draft.body,{onChange(draft.copy(body=it))},label={Text("这一路的故事")},placeholder={Text("天气、风景、一次偶遇，或者此刻的心情…")},modifier=Modifier.fillMaxWidth(),minLines=6,maxLines=18) }
@@ -208,7 +193,6 @@ import kotlin.math.roundToInt
             Text("生成的标签和文字由你确认后使用。草稿会在本机暂存。",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         } }
     }
-    if(mapPicker)MapLocationPicker(latestDraft.mapPoint(),latestDraft.place,onDismiss={mapPicker=false},onChoose={point,name->onChange(latestDraft.copy(place=name,latitude=point.latitude,longitude=point.longitude,mapCityCode=null));mapPicker=false})
     if(suggestion!=null) AlertDialog(onDismissRequest={suggestion=null},title={Text("精灵的整理建议")},text={Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {
         OutlinedTextField(suggestedTitle,{suggestedTitle=it},label={Text("建议标题")})
         OutlinedTextField(suggestedTags,{suggestedTags=it},label={Text("候选标签")})
