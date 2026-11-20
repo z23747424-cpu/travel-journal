@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -24,22 +25,26 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-private val Paper = Color(0xFFF7F5EF)
-private val Ink = Color(0xFF252E2A)
-private val Green = Color(0xFF385B50)
+private val Paper = Color(0xFFF7F3EA)
+private val Ink = Color(0xFF304532)
+private val Green = Color(0xFF4C6B52)
 
 @Composable fun TravelTheme(content: @Composable () -> Unit) {
     val colors = lightColorScheme(primary = Green, onPrimary = Color.White,
         secondary = Color(0xFF825A42), onSecondary = Color.White,
         secondaryContainer = Color(0xFFE8ECE3), onSecondaryContainer = Ink,
         background = Paper, onBackground = Ink, surface = Paper, onSurface = Ink,
+        surfaceBright=Color(0xFFFFFDF6),surfaceDim=Color(0xFFE2E1D3),surfaceContainerLowest=Color(0xFFFFFDF6),
+        surfaceContainerLow=Color(0xFFF3F0E5),surfaceContainer=Color(0xFFEDECE0),surfaceContainerHigh=Color(0xFFE7E9DC),surfaceContainerHighest=Color(0xFFDFE4D2),
+        inverseSurface=Ink,inverseOnSurface=Color(0xFFFFFDF5),inversePrimary=Color(0xFFCBD9BD),
         surfaceVariant = Color(0xFFEDEFE7), onSurfaceVariant = Color(0xFF59655E),
         outline = Color(0xFF747F76), outlineVariant = Color(0xFFD8DCD3),
         error = Color(0xFFAA3432))
+    val handwriting = FontFamily(Font(R.font.scrapbook_handwriting))
     val typography = Typography(
-        headlineLarge = Typography().headlineLarge.copy(fontSize = 32.sp, fontWeight = FontWeight.Normal, fontFamily = FontFamily.Serif),
-        headlineMedium = Typography().headlineMedium.copy(fontSize = 28.sp, fontWeight = FontWeight.Normal, fontFamily = FontFamily.Serif),
-        titleLarge = Typography().titleLarge.copy(fontSize = 22.sp, fontWeight = FontWeight.Medium),
+        headlineLarge = Typography().headlineLarge.copy(fontSize = 32.sp, fontWeight = FontWeight.Normal, fontFamily = handwriting),
+        headlineMedium = Typography().headlineMedium.copy(fontSize = 28.sp, fontWeight = FontWeight.Normal, fontFamily = handwriting),
+        titleLarge = Typography().titleLarge.copy(fontSize = 24.sp, fontWeight = FontWeight.Normal, fontFamily = handwriting),
         bodyLarge = Typography().bodyLarge.copy(fontSize = 16.sp, lineHeight = 26.sp),
         bodyMedium = Typography().bodyMedium.copy(lineHeight = 23.sp))
     MaterialTheme(colorScheme = colors, typography = typography,
@@ -71,7 +76,11 @@ private val Green = Color(0xFF385B50)
     }
 }
 
-@Composable fun EmptyLandscape(modifier: Modifier = Modifier) {
+@Composable fun EmptyLandscape(modifier: Modifier = Modifier, photo: File? = null) {
+    if (photo != null && photo.isFile) {
+        LocalPhoto(photo, "自定义背景", modifier.fillMaxWidth().height(170.dp))
+        return
+    }
     val line = MaterialTheme.colorScheme.primary
     Canvas(modifier.fillMaxWidth().height(170.dp)) {
         drawRect(Color(0xFFE7ECE4))
@@ -128,4 +137,13 @@ private val Green = Color(0xFF385B50)
 @Composable fun Message(text: String, error: Boolean = false) {
     if (text.isNotBlank()) Text(text, color = if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), style = MaterialTheme.typography.bodyMedium)
+}
+
+
+/** Shared warm paper surface for native editor and inspiration screens. */
+@Composable fun ScrapbookPaper(modifier:Modifier=Modifier,content:@Composable BoxScope.()->Unit){
+    Box(modifier.background(MaterialTheme.colorScheme.background)){
+        Image(painterResource(R.drawable.scrapbook_paper),null,Modifier.matchParentSize(),contentScale=ContentScale.Crop,alpha=.38f)
+        content()
+    }
 }

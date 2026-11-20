@@ -21,13 +21,20 @@ internal fun validateBackupPath(name: String) {
 }
 
 internal fun writeBackup(out: OutputStream, journals: List<Journal>, wishes: List<Wish>, photoFile: (String) -> File) {
-    require(journals.size <= MAX_RECORDS && wishes.size <= MAX_RECORDS) { "备份最多支持 2000 篇手账和 2000 项收藏" }
-    val manifest = JSONObject().put("version", 1)
+    writeBackupBundle(out,journals,wishes,emptyList(),emptyList(),photoFile)
+}
+
+internal fun writeBackupBundle(out:OutputStream,journals:List<Journal>,wishes:List<Wish>,plans:List<TravelPlan>,designs:List<ProvinceDesign>,photoFile:(String)->File){
+    require(journals.size <= MAX_RECORDS && wishes.size <= MAX_RECORDS&&plans.size<=MAX_RECORDS&&designs.size<=34) { "备份记录数量过多" }
+    plans.forEach{validateTravelPlan(it)};designs.forEach(::validateProvinceDesign)
+    val manifest = JSONObject().put("version", 2)
         .put("journals", JSONArray(journals.map(::journalJson)))
         .put("wishes", JSONArray(wishes.map(::wishJson)))
+        .put("plans",JSONArray(plans.map(::planJson)))
+        .put("provinceDesigns",JSONArray(designs.map(::provinceDesignJson)))
         .toString().toByteArray(Charsets.UTF_8)
     require(manifest.size <= MAX_MANIFEST_BYTES) { "文字内容过大，无法生成当前版本备份" }
-    val names = journals.flatMap { it.photos }.distinct()
+    val names = (journals.flatMap { it.photos }+designs.flatMap{it.photos+listOfNotNull(it.marker.image)}).distinct()
     require(names.size + 1 <= MAX_FILES) { "照片数量过多" }
     var total = manifest.size.toLong()
     names.forEach { name ->
@@ -50,6 +57,12 @@ internal fun writeBackup(out: OutputStream, journals: List<Journal>, wishes: Lis
 }
 
 internal fun readBackup(input: InputStream, cacheDir: File, merge: (List<Journal>, List<Wish>, Map<String, File>) -> Int): Int {
+    return readBackupBundle(input,cacheDir){journals,wishes,plans,designs,photos->
+        require(plans.isEmpty()&&designs.isEmpty()){"此导入入口不支持计划和省份设计"};merge(journals,wishes,photos)
+    }
+}
+
+internal fun readBackupBundle(input:InputStream,cacheDir:File,merge:(List<Journal>,List<Wish>,List<TravelPlan>,List<ProvinceDesign>,Map<String,File>)->Int):Int{
     val staging = File(cacheDir, "backup-import-${UUID.randomUUID()}")
     check(staging.mkdirs()) { "无法建立备份临时目录" }
     try {
@@ -81,20 +94,26 @@ internal fun readBackup(input: InputStream, cacheDir: File, merge: (List<Journal
             }
         }
         val json = JSONObject(String(requireNotNull(manifest) { "备份缺少 manifest.json" }, Charsets.UTF_8))
-        require(json.get("version") is Number && json.getInt("version") == 1 && json.getDouble("version") == 1.0) { "不支持的备份版本" }
+        require(json.get("version") is Number && json.getInt("version") in 1..2 && json.getDouble("version")==json.getInt("version").toDouble()) { "不支持的备份版本" }
         val journalArray = json.getJSONArray("journals")
         val wishArray = json.getJSONArray("wishes")
         require(journalArray.length() <= MAX_RECORDS && wishArray.length() <= MAX_RECORDS) { "备份记录数量过多" }
         val journals = (0 until journalArray.length()).map { journalFromJson(journalArray.getJSONObject(it)).also { journal -> validateJournal(journal) } }
         val wishes = (0 until wishArray.length()).map { wishFromJson(wishArray.getJSONObject(it)).also(::validateWish) }
+        val planArray=if(json.has("plans"))json.getJSONArray("plans")else JSONArray()
+        val designArray=if(json.has("provinceDesigns"))json.getJSONArray("provinceDesigns")else JSONArray()
+        require(planArray.length()<=MAX_RECORDS&&designArray.length()<=34){"计划或设计数量过多"}
+        val plans=(0 until planArray.length()).map{planFromJson(planArray.getJSONObject(it)).also{p->validateTravelPlan(p)}}
+        val designs=(0 until designArray.length()).map{provinceDesignFromJson(designArray.getJSONObject(it)).also(::validateProvinceDesign)}
+        require(plans.map{it.id}.distinct().size==plans.size&&designs.map{it.provinceCode}.distinct().size==designs.size){"计划或省份设计重复"}
         val journalIds = journals.map { it.id }.toSet()
         val wishIds = wishes.map { it.id }.toSet()
         require(journalIds.size == journals.size && wishIds.size == wishes.size) { "备份包含重复记录 ID" }
         require(journals.all { it.wishId == null || it.wishId in wishIds } && wishes.all { it.journalId == null || it.journalId in journalIds }) { "备份中的旅行与收藏关联不完整" }
         require(journals.all { journal -> journal.wishId == null || wishes.single { it.id == journal.wishId }.journalId == journal.id } &&
             wishes.all { wish -> wish.journalId == null || journals.single { it.id == wish.journalId }.wishId == wish.id }) { "备份中的旅行与收藏关联不一致" }
-        require(journals.flatMap { it.photos }.toSet() == photos.keys) { "备份中存在缺失或未引用的照片" }
-        return merge(journals, wishes, photos)
+        require((journals.flatMap { it.photos }+designs.flatMap{it.photos+listOfNotNull(it.marker.image)}).toSet() == photos.keys) { "备份中存在缺失或未引用的照片" }
+        return merge(journals, wishes,plans,designs, photos)
     } catch (e: org.json.JSONException) {
         throw IllegalArgumentException("备份中的 JSON 结构损坏或字段类型错误", e)
     } catch (e: java.util.zip.ZipException) {
@@ -116,6 +135,7 @@ internal fun journalJson(j: Journal): JSONObject = JSONObject()
     .put("visited",j.visited)
     .put("mapCityCode",j.mapCityCode ?: JSONObject.NULL)
     .put("mapFillColor",j.mapFillColor).put("mapFillMode",j.mapFillMode)
+    .put("provinceCode",j.provinceCode?:JSONObject.NULL).put("city",j.city).put("coverPhoto",j.coverPhoto?:JSONObject.NULL)
 
 internal fun journalFromJson(j: JSONObject): Journal = Journal(
     id = strictString(j, "id"), title = strictString(j, "title"), date = strictString(j, "date"),
@@ -127,6 +147,8 @@ internal fun journalFromJson(j: JSONObject): Journal = Journal(
     mapCityCode=nullableString(j,"mapCityCode"),
     mapFillColor=strictString(j,"mapFillColor","#A9BFAE"),
     mapFillMode=strictString(j,"mapFillMode","color"),
+    provinceCode=nullableString(j,"provinceCode"),city=strictString(j,"city",""),
+    coverPhoto=nullableString(j,"coverPhoto"),
 )
 
 internal fun destinationJson(d: Destination): JSONObject = JSONObject()

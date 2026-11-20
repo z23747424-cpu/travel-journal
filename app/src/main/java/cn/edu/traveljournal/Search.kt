@@ -15,7 +15,7 @@ fun localSearch(query: String, journals: List<Journal>): List<SearchHit> {
     if (terms.isEmpty()) return emptyList()
     return journals.mapNotNull { journal ->
         val title = searchText(journal.title)
-        val place = searchText(journal.place)
+        val place = searchText("${journal.place} ${journal.city}")
         val tags = searchText(journal.tags.joinToString(" "))
         val content = searchText("${journal.body} ${journal.photoDescription} ${journal.date}")
         val matched = terms.filter { it in title || it in place || it in tags || it in content }

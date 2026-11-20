@@ -22,6 +22,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
 import org.json.JSONObject
+import java.util.concurrent.atomic.AtomicBoolean
+
+private val coldStartPhotosChecked=AtomicBoolean(false)
 
 class MainActivity:ComponentActivity(){
     override fun onCreate(savedInstanceState:Bundle?){
@@ -40,7 +43,11 @@ class MainActivity:ComponentActivity(){
     val snackbar=remember{SnackbarHostState()}
     var journals by remember{mutableStateOf<List<Journal>>(emptyList())}
     var wishes by remember{mutableStateOf<List<Wish>>(emptyList())}
+    var plans by remember{mutableStateOf<List<TravelPlan>>(emptyList())}
+    var designs by remember{mutableStateOf<List<ProvinceDesign>>(emptyList())}
+    var planEditing by remember{mutableStateOf(false)}
     var config by remember{mutableStateOf(AiConfig())}
+    var enterAtMaxZoom by remember{mutableStateOf(true)}
     var loading by remember{mutableStateOf(true)}
     var loadError by remember{mutableStateOf("")}
     var tab by rememberSaveable{mutableIntStateOf(0)}
@@ -57,12 +64,14 @@ class MainActivity:ComponentActivity(){
     val stateHolder=rememberSaveableStateHolder()
     fun message(s:String){scope.launch{snackbar.showSnackbar(s)}}
     suspend fun refresh(){
-        withContext(Dispatchers.IO){repo.journals() to repo.wishes()}.let{journals=it.first;wishes=it.second}
+        withContext(Dispatchers.IO){Triple(repo.journals(),repo.wishes(),repo.plans())}.let{journals=it.first;wishes=it.second;plans=it.third}
+        designs=withContext(Dispatchers.IO){repo.provinceDesigns()}
         config=try{withContext(Dispatchers.IO){repo.loadConfig()}}catch(e:Exception){message("AI密钥暂时无法读取，可在设置中重新填写；本地手账可继续使用");AiConfig()}
+        enterAtMaxZoom=withContext(Dispatchers.IO){repo.enterProvinceAtMaxZoom()}
         if(draft==null){parkedDraft=withContext(Dispatchers.IO){repo.loadDraft()};if(recovered!=null)recovered=parkedDraft}
     }
     LaunchedEffect(Unit){
-        try{refresh();if(draft==null){recovered=withContext(Dispatchers.IO){repo.loadDraft()};parkedDraft=recovered}}
+        try{if(coldStartPhotosChecked.compareAndSet(false,true))withContext(Dispatchers.IO){repo.purgeUnusedPhotos(draft?.photos.orEmpty())};refresh();if(draft==null)recovered=parkedDraft}
         catch(e:Exception){loadError=e.message?:"本地内容暂时无法载入"}
         finally{loading=false}
     }
@@ -70,12 +79,12 @@ class MainActivity:ComponentActivity(){
         val current=draft
         if(current!=null&&!saving){delay(500);try{withContext(Dispatchers.IO){repo.saveDraft(current)}}catch(e:CancellationException){throw e}catch(e:Exception){message("草稿暂存失败，请及时保存")}}
     }
-    fun create(j:Journal=Journal()){if(saving)return;if(parkedDraft!=null){recovered=parkedDraft;return};detailId=null;draft=j}
+    fun create(j:Journal=Journal()){if(saving)return;if(parkedDraft!=null){recovered=parkedDraft;return};detailId=null;draft=j.copy(provinceCode=journalProvinceCode(j,CityAtlas.load(context)))}
     fun save(){
         if(saving)return
         val j=draft?:return
         when{
-            j.title.isBlank()->{message("请给这篇手账填写一个标题");return}
+            j.provinceCode==null->{message("先选择省份，把这一程安放好");return}
             j.body.isBlank()&&j.photos.isEmpty()->{message("写点文字或添加一张照片再保存");return}
             runCatching{LocalDate.parse(j.date)}.isFailure->{message("请选择有效的旅行日期");return}
         }
@@ -83,7 +92,7 @@ class MainActivity:ComponentActivity(){
         scope.launch{
             try{
                 withContext(Dispatchers.IO){
-                    repo.saveJournal(j.copy(title=j.title.trim(),updatedAt=System.currentTimeMillis()))
+                    repo.saveJournal(j.copy(title=j.title.trim(),place=j.place.ifBlank{CityAtlas.load(context).provinceAreas.find{it.code==j.provinceCode}?.name.orEmpty()},updatedAt=System.currentTimeMillis()))
                     repo.clearDraft()
                 }
                 refresh();draft=null;parkedDraft=null;detailId=j.id;message("已把这一程留在手账里")
@@ -95,28 +104,32 @@ class MainActivity:ComponentActivity(){
     val detail=journals.find{it.id==detailId}
     val labels=listOf("地图","搜索","灵感","设置")
     val icons=listOf(R.drawable.ic_lvye_map,R.drawable.ic_lvye_search,R.drawable.ic_lvye_compass,R.drawable.ic_lvye_sliders_horizontal)
+    // Read screen-level state in the parent composition before the constraint subcomposition.
+    val contentLoading=loading
+    val contentError=loadError
+    val contentPlanEditing=planEditing
     BoxWithConstraints{
         val wide=maxWidth>=720.dp
         Scaffold(snackbarHost={SnackbarHost(snackbar)},
-            bottomBar={if(!wide&&draft==null&&detail==null&&!archive)NavigationBar(containerColor=MaterialTheme.colorScheme.surface){labels.forEachIndexed{i,label->NavigationBarItem(selected=tab==i,onClick={tab=i},icon={TravelIcon(icons[i],label)},label={Text(label)},colors=NavigationBarItemDefaults.colors(indicatorColor=MaterialTheme.colorScheme.secondaryContainer))}}}
+            bottomBar={if(!wide&&draft==null&&detail==null&&!archive&&!contentPlanEditing)NavigationBar(containerColor=MaterialTheme.colorScheme.surface){labels.forEachIndexed{i,label->NavigationBarItem(selected=tab==i,onClick={tab=i},icon={TravelIcon(icons[i],label)},label={Text(label)},colors=NavigationBarItemDefaults.colors(indicatorColor=MaterialTheme.colorScheme.secondaryContainer))}}}
         ){padding->
-            Row(Modifier.fillMaxSize().padding(padding)){
-                if(wide&&draft==null&&detail==null&&!archive)NavigationRail{labels.forEachIndexed{i,label->NavigationRailItem(selected=tab==i,onClick={tab=i},icon={TravelIcon(icons[i],label)},label={Text(label)})}}
-                Box(Modifier.weight(1f).fillMaxHeight()){
+            Row(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)){
+                if(wide&&draft==null&&detail==null&&!archive&&!contentPlanEditing)NavigationRail{labels.forEachIndexed{i,label->NavigationRailItem(selected=tab==i,onClick={tab=i},icon={TravelIcon(icons[i],label)},label={Text(label)})}}
+                ScrapbookPaper(Modifier.weight(1f).fillMaxHeight()){
                     when{
-                        loading->Column(Modifier.align(Alignment.Center),horizontalAlignment=Alignment.CenterHorizontally){CircularProgressIndicator();Spacer(Modifier.height(16.dp));Text("正在翻开你的旅行手账…")}
-                        loadError.isNotBlank()->Column(Modifier.padding(24.dp)){Message(loadError,true);Button(onClick={scope.launch{try{refresh();loadError=""}catch(e:Exception){message(e.message?:"载入失败")}}}){Text("重试载入")}}
+                        contentLoading->Column(Modifier.align(Alignment.Center),horizontalAlignment=Alignment.CenterHorizontally){CircularProgressIndicator();Spacer(Modifier.height(16.dp));Text("正在翻开你的旅行手账…")}
+                        contentError.isNotBlank()->Column(Modifier.padding(24.dp)){Message(contentError,true);Button(onClick={scope.launch{try{refresh();loadError=""}catch(e:Exception){message(e.message?:"载入失败")}}}){Text("重试载入")}}
                         draft!=null->JournalEditor(draft!!,repo,{if(!saving)draft=it},::save,{if(!saving)leave=true},::message,saving)
-                        detail!=null->JournalDetail(detail,repo,config.spiritName,onEdit={create(detail)},onDelete={scope.launch{try{withContext(Dispatchers.IO){repo.deleteJournal(detail.id)};refresh();detailId=null;message("手账已删除")}catch(e:Exception){message(e.message?:"删除失败")}}},onBack={detailId=null},onError=::message,onNewHere={create(Journal(place=detail.place,latitude=detail.latitude,longitude=detail.longitude,visited=detail.visited))})
+                        detail!=null->JournalDetail(detail,repo,config.spiritName,onEdit={create(detail)},onDelete={scope.launch{try{withContext(Dispatchers.IO){repo.deleteJournal(detail.id)};refresh();detailId=null;message("手账已删除")}catch(e:Exception){message(e.message?:"删除失败")}}},onBack={detailId=null},onError=::message,onNewHere={create(Journal(place=detail.place,latitude=detail.latitude,longitude=detail.longitude,visited=detail.visited,provinceCode=detail.provinceCode,city=detail.city))})
                         archive&&tab==0->Column(Modifier.fillMaxSize()) {
                             Row(Modifier.fillMaxWidth().padding(horizontal=12.dp),verticalAlignment=Alignment.CenterVertically){TextButton(onClick={archive=false}){Text("返回地图")};Spacer(Modifier.weight(1f));TextButton(onClick={create()}){Text("新建手账")}}
                             Box(Modifier.weight(1f)){JournalHome(journals,repo,{create()},{detailId=it.id},onDemo={scope.launch{try{withContext(Dispatchers.IO){loadDemoJournals(context,repo)};refresh()}catch(e:Exception){message(e.message?:"示例载入失败")}}},onInspiration={archive=false;tab=2},hasDraft=parkedDraft!=null,onResume={recovered=parkedDraft})}
                         }
                         else->stateHolder.SaveableStateProvider(tab){when(tab){
-                            0->MapHome(journals,repo,::create,{detailId=it.id},{archive=true},onDemo={scope.launch{try{withContext(Dispatchers.IO){loadDemoJournals(context,repo)};refresh();message("已添加3篇教学示例，地图坐标仅作演示")}catch(e:Exception){message(e.message?:"示例载入失败")}}},hasDraft=parkedDraft!=null,onResume={recovered=parkedDraft},onError=::message,mapRevision=mapRevision,onSaveMapNote={entry->scope.launch{try{withContext(Dispatchers.IO){repo.saveJournal(entry.copy(updatedAt=System.currentTimeMillis()))};refresh();message("已插上想去旗")}catch(e:CancellationException){throw e}catch(e:Exception){message(e.message?:"保存想去旗失败，请重试")}}},onMoveRecord={id,p->scope.launch{mapMoves.withLock{try{withContext(Dispatchers.IO){repo.moveMapSticker(id,p)};refresh()}catch(e:CancellationException){throw e}catch(e:Exception){message(e.message?:"位置保存失败，请重新拖动")}finally{mapRevision++}}}})
+                            0->ProvinceHome(journals,repo,::create,{detailId=it.id},{archive=true},onDemo={scope.launch{try{withContext(Dispatchers.IO){loadDemoJournals(context,repo)};refresh();message("已载入明确标注的示例手账")}catch(e:Exception){message(e.message?:"示例载入失败")}}},hasDraft=parkedDraft!=null,onResume={recovered=parkedDraft},onError=::message,designs=designs,plans=plans,onSaveDesign={d->withContext(Dispatchers.IO){repo.saveProvinceDesign(d)};refresh()},enterAtMaxZoom=enterAtMaxZoom)
                             1->SearchScreen(journals,repo,{detailId=it.id},{tab=3})
-                            2->InspirationScreen(wishes,repo,onSaveWish={w->scope.launch{try{withContext(Dispatchers.IO){repo.saveWish(w)};refresh();message("已保存到想去清单")}catch(e:Exception){message(e.message?:"收藏失败")}}},onDeleteWish={id->scope.launch{try{withContext(Dispatchers.IO){repo.deleteWish(id)};refresh();message("已移除收藏")}catch(e:Exception){message(e.message?:"移除失败")}}},onStart={wish->create(Journal(place=wish.destination.name,title="${wish.destination.name}旅行",wishId=wish.id,visited=false))},onSettings={tab=3})
-                            3->SettingsScreen(config,repo,onSave={c->scope.launch{try{withContext(Dispatchers.IO){repo.saveConfig(c)};refresh();message("设置已保存")}catch(e:Exception){message(e.message?:"设置保存失败")}}},onImported={scope.launch{refresh()}},onMessage=::message)
+                            2->NativeInspirationScreen(wishes,plans,repo,onSaveWish={w->scope.launch{try{withContext(Dispatchers.IO){repo.saveWish(w)};refresh();message("已保存到想去清单")}catch(e:Exception){message(e.message?:"收藏失败")}}},onDeleteWish={id->scope.launch{try{withContext(Dispatchers.IO){repo.deleteWish(id)};refresh();message("已移除收藏")}catch(e:Exception){message(e.message?:"移除失败")}}},onStart={wish->create(Journal(place=wish.destination.name,title="${wish.destination.name}旅行",wishId=wish.id,visited=false))},onSettings={tab=3},onPlansChanged={scope.launch{refresh()}},onError=::message,onEditorChange={planEditing=it})
+                            3->SettingsScreen(config,repo,onSave={c->scope.launch{try{withContext(Dispatchers.IO){repo.saveConfig(c)};refresh();message("设置已保存")}catch(e:Exception){message(e.message?:"设置保存失败")}}},onImported={scope.launch{refresh()}},onMessage=::message,enterAtMaxZoom=enterAtMaxZoom,onEnterAtMaxZoom={on->enterAtMaxZoom=on;scope.launch{try{withContext(Dispatchers.IO){repo.saveEnterProvinceAtMaxZoom(on)}}catch(e:Exception){message(e.message?:"设置保存失败")}}})
                         }}
                     }
                 }

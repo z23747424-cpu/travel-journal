@@ -144,7 +144,7 @@ import kotlinx.coroutines.withContext
                 LazyColumn(Modifier.fillMaxWidth().heightIn(max=380.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
                     items(selectedNotes,key={it.id}) { entry ->
                         Column(verticalArrangement=Arrangement.spacedBy(8.dp)) {
-                            if(entry.photos.isNotEmpty())LocalPhoto(repo.photoFile(entry.photos.first()),entry.title,Modifier.fillMaxWidth().height(140.dp))
+                            journalCover(entry)?.let{LocalPhoto(repo.photoFile(it),entry.title,Modifier.fillMaxWidth().height(140.dp))}
                             Text(entry.title,style=MaterialTheme.typography.titleMedium)
                             Text("${entry.date} · ${entry.place} · ${if(entry.visited)"去过" else "想去"}",style=MaterialTheme.typography.bodySmall)
                             if(entry.body.isNotBlank())Text(entry.body,maxLines=3,overflow=TextOverflow.Ellipsis)

@@ -203,7 +203,7 @@ private const val SYSTEM_PROMPT = "你是管理旅行手账的账本精灵，温
 private const val SEARCH_PROMPT = "根据用户查询，对提供的真实手账按语义相关性排序，只返回有可信内容支持的记录ID及简短理由；不因缺少相同关键词而忽略同义表达。没有相关记录时返回空items。不臆造回忆或ID。返回JSON：{\"items\":[{\"id\":\"真实记录ID\",\"reason\":\"记录内支持匹配的内容\"}]}。"
 
 private fun compactJournal(j: Journal): JSONObject = JSONObject().put("id", j.id).put("title", j.title.take(200))
-    .put("date", j.date.take(20)).put("place", j.place.take(300)).put("tags", JSONArray(j.tags.take(24).map { it.take(80) })).put("visited",j.visited)
+    .put("date", j.date.take(20)).put("place", j.place.take(300)).put("city",j.city.take(120)).put("tags", JSONArray(j.tags.take(24).map { it.take(80) })).put("visited",j.visited)
     .put("photoDescription", j.photoDescription.take(1200)).put("body", j.body.take(800))
 
 /** Re-encoding pixels creates a smaller JPEG with no EXIF/location metadata. Originals stay local. */

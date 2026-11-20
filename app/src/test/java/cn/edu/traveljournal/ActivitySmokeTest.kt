@@ -2,6 +2,7 @@ package cn.edu.traveljournal
 
 import android.view.View
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -20,7 +21,8 @@ class ActivitySmokeTest {
             shadowOf(android.os.Looper.getMainLooper()).idle()
             val content=controller.get().findViewById<View>(android.R.id.content)
             assertNotNull(content)
-            assertEquals("cn.edu.traveljournal",controller.get().packageName)
+            // 开发版包名带 .dev 后缀，发布版不带，两者都算通过
+            assertTrue(controller.get().packageName.startsWith("cn.edu.traveljournal"))
         }finally{controller.pause().stop().destroy()}
     }
 }

@@ -93,13 +93,18 @@ internal class NativeTravelMapView(context:Context): View(context) {
         val focus=focusedProvince
         val showCities=focus!=null || zoom>=6.5 || a.provinceAreas.isEmpty()
         if(focus!=null) {
+            // 外省只留极淡的底，作为“本省在哪”的参照；城市一律不画，免得区县/城市和别省混在一起。
+            paint.style=Paint.Style.FILL;paint.color=Color.rgb(240,238,229);paint.pathEffect=null;paint.alpha=255
+            a.provinces.forEach { shape -> canvas.drawPath(shape.path,paint) }
             paint.style=Paint.Style.FILL;paint.color=Color.rgb(238,242,231);paint.pathEffect=null
             canvas.drawPath(focus.shape.path,paint)
         }
         a.cities.forEach { city ->
             if(!visible(city.shape))return@forEach
+            // 进入省图层后，外省的城市与区县完全不参与绘制。
+            if(focus!=null && city.provinceCode!=focus.code)return@forEach
             val inFocus=focus==null || city.provinceCode==focus.code
-            val alpha=if(inFocus)255 else 55
+            val alpha=255
             val style=styles[city.code]
             if(style!=null) {
                 paint.style=Paint.Style.FILL;paint.color=runCatching { Color.parseColor(style.journal.mapFillColor) }.getOrDefault(Color.rgb(169,191,174));paint.pathEffect=null
